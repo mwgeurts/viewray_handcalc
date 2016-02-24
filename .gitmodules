@@ -1,0 +1,3 @@
+[submodule "xpdf_tools"]
+	path = xpdf_tools
+	url = https://github.com/mwgeurts/xpdf_tools
