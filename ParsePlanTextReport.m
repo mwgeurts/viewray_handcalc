@@ -172,7 +172,7 @@ while ischar(tline)
                 i = length(beams) + 1;
                 
                 % Store angle, group, and iso
-                beams{i}.angle = str2double(tline(11:end-1));
+                beams{i}.angle = str2double(tline(7:end-1));
                 beams{i}.group = group;
                 beams{i}.iso = iso;
                 
@@ -183,59 +183,59 @@ while ischar(tline)
                 beams{i}.oad = [];
             
             % Store beam on time
-            elseif length(tline) > 26 && strcmp(tline(1:26), ...
-                    '    Fraction Beam-On Time:')
-                beams{i}.plantime = cell2mat(textscan(tline(27:end), ...
+            elseif length(tline) > 22 && strcmp(tline(1:22), ...
+                    'Fraction Beam-On Time:')
+                beams{i}.plantime = cell2mat(textscan(tline(23:end), ...
                     '%f sec'));
             
             % Store beam type
-            elseif length(tline) > 14 && strcmp(tline(1:14), ...
-                    '    Beam Type:')
-                beams{i}.type = strtrim(tline(15:end));   
+            elseif length(tline) > 10 && strcmp(tline(1:10), ...
+                    'Beam Type:')
+                beams{i}.type = strtrim(tline(11:end));   
                 
             % Store equivalent square field
-            elseif length(tline) > 28 && strcmp(tline(1:28), ...
-                    '    Open Field Eq. Sq. (cm):')
+            elseif length(tline) > 24 && strcmp(tline(1:24), ...
+                    'Open Field Eq. Sq. (cm):')
                 try
-                    beams{i}.equivSquare = str2double(tline(29:end));
+                    beams{i}.equivSquare = str2double(tline(25:end));
                 catch
                     beams{i}.equivSquare = 0;
                 end
             
             % Store weight point
-            elseif length(tline) > 17 && strcmp(tline(1:17), ...
-                    '    Weight Point:')
-                beams{i}.weightpt = regexprep(strtrim(tline(18:end)), ...
+            elseif length(tline) > 13 && strcmp(tline(1:13), ...
+                    'Weight Point:')
+                beams{i}.weightpt = regexprep(strtrim(tline(14:end)), ...
                     '[^\w ]', ''); 
                 
             % Store weight percentage
-            elseif length(tline) > 30 && strcmp(tline(1:30), ...
-                    '      Beam Dose Normalization:')
-                beams{i}.weight = cell2mat(textscan(tline(31:end), '%f%%'));
+            elseif length(tline) > 24 && strcmp(tline(1:24), ...
+                    'Beam Dose Normalization:')
+                beams{i}.weight = cell2mat(textscan(tline(25:end), '%f%%'));
                 
             % Store SSDs
-            elseif length(tline) > 17 && strcmp(tline(1:17), ...
-                    '        SSD (cm):')
+            elseif length(tline) > 9 && strcmp(tline(1:9), ...
+                    'SSD (cm):')
                 beams{i}.ssd(length(beams{i}.ssd)+1) = ...
-                    str2double(tline(18:end));
+                    str2double(tline(10:end));
                 
             % Store physical depth
-            elseif length(tline) > 24 && strcmp(tline(1:24), ...
-                    '        - Physical (cm):')
+            elseif length(tline) > 16 && strcmp(tline(1:16), ...
+                    '- Physical (cm):')
                 beams{i}.depth(length(beams{i}.depth)+1) = ...
-                    str2double(tline(25:end));
+                    str2double(tline(17:end));
             
             % Store effective depth
-            elseif length(tline) > 25 && strcmp(tline(1:25), ...
-                    '        - Effective (cm):')
+            elseif length(tline) > 17 && strcmp(tline(1:17), ...
+                    '- Effective (cm):')
                 beams{i}.edepth(length(beams{i}.edepth)+1) = ...
-                    str2double(tline(26:end));
+                    str2double(tline(18:end));
                 
             % Store OAD
-            elseif length(tline) > 17 && strcmp(tline(1:17), ...
-                    '        OAD (cm):')
+            elseif length(tline) > 9 && strcmp(tline(1:9), ...
+                    'OAD (cm):')
                 beams{i}.oad(length(beams{i}.oad)+1) = ...
-                    str2double(tline(18:end));
+                    str2double(tline(10:end));
             end
             
             % Get next line
