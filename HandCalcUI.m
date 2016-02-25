@@ -58,6 +58,13 @@ handles.output = hObject;
 % Declare planning source strength, in Gy/min
 handles.k = 1.85; 
 
+% Declare default machine name and serial number
+handles.defaultmachine = 'ViewRay MRIdian';
+handles.defaultserial = '101';
+
+% Declare Co-60 half life, in days
+handles.halflife = 1925.2;
+
 % Set version_text handle
 handles.version = '0.9';
 
@@ -104,7 +111,7 @@ handles.patient_rows = {
     'Diagnosis'
     'Prescription'
     'Fractions'
-    'Density CT'
+    'Density Image'
     'Density Overrides'
     'Plan Name'
     'Approved By'
@@ -154,14 +161,6 @@ set(handles.cal_table, 'Data', horzcat(handles.cal_rows, ...
     cell(length(handles.cal_rows), 1)));
 set(handles.beam_table, 'Data', horzcat(handles.beam_rows, ...
     cell(length(handles.beam_rows), 1)));
-
-%% Update source strength
-Event(sprintf('Planning ideal source strength defaulted to %0.3f Gy/min', ...
-    handles.k));
-data = get(handles.machine_table, 'Data');
-data{6,2} = sprintf('%0.3f Gy/min', handles.k);
-set(handles.machine_table, 'Data', data);
-clear data;
 
 %% Load calibration report
 % Define source report directory
@@ -283,14 +282,14 @@ clear data
 guidata(hObject, handles);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function report_Callback(hObject, eventdata, handles)
+function report_Callback(~, ~, ~)
 % hObject    handle to report (see GCBO)
 % eventdata  reserved - to be defined in a future version_text of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function report_CreateFcn(hObject, eventdata, handles)
+function report_CreateFcn(hObject, ~, ~)
 % hObject    handle to report (see GCBO)
 % eventdata  reserved - to be defined in a future version_text of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -301,7 +300,7 @@ if ispc && isequal(get(hObject,'BackgroundColor'), ...
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function browse_button_Callback(hObject, eventdata, handles)
+function browse_button_Callback(hObject, ~, handles)
 % hObject    handle to browse_button (see GCBO)
 % eventdata  reserved - to be defined in a future version_text of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -355,15 +354,73 @@ if iscell(name) || sum(name ~= 0)
     data = get(handles.patient_table, 'Data');
     data{1,2} = handles.patient.id;
     data{2,2} = handles.patient.name;
+    if isfield(handles.patient, 'birthdate')
+        data{3,2} = datestr(handles.patient.birthdate, 'mm/dd/yyyy');
+    end
+    if isfield(handles.patient, 'diagnosis')
+        data{4,2} = handles.patient.diagnosis;
+    end
+    if isfield(handles.patient, 'rxvolume') && ...
+            isfield(handles.patient, 'rxdose') && ...
+            isfield(handles.patient, 'rxpercent')
+        data{5,2} = sprintf('%0.1f Gy to %0.1f%% of %s', ...
+            handles.patient.rxdose, handles.patient.rxpercent, ...
+            handles.patient.rxvolume);
+    end
     data{6,2} = sprintf('%i', handles.patient.fractions);
+    if isfield(handles.patient, 'densityct')
+        if isempty(handles.patient.densityct)
+            data{7,2} = 'None';
+        else
+            data{7,2} = 'CT';
+        end
+    end
+    if isfield(handles.patient, 'densityoverrides')
+        data{8,2} = '';
+        for i = length(handles.patient.densityoverrides):-1:1
+            if ~isempty(handles.patient.densityoverrides{i})
+                if isempty(data{8,2})
+                    data{8,2} = sprintf('%s (%0.3f g/cc)', ...
+                        handles.patient.densityoverrides{i}.name, ...
+                        handles.patient.densityoverrides{i}.density);
+                else
+                    data{8,2} = sprintf('%s (%0.3f g/cc), %s', ...
+                        handles.patient.densityoverrides{i}.name, ...
+                        handles.patient.densityoverrides{i}.density, data{8,2});
+                end
+            end
+        end
+    end
+    if isfield(handles.patient, 'plan')
+        data{9,2} = handles.patient.plan;
+    end
+    if isfield(handles.patient, 'planapproval')
+        data{10,2} = handles.patient.planapproval;
+    end
     set(handles.patient_table, 'Data', data);
     
     % Set machine data
     data = get(handles.machine_table, 'Data');
-    data{1,2} = 'ViewRay MRIdian';
+    data{1,2} = handles.defaultmachine;
     if isfield(handles.machine, 'serial')
         data{2,2} = handles.machine.serial;
+    else
+        data{2,2} = handles.defaultserial;
     end
+    if isfield(handles.machine, 'version')
+        data{3,2} = handles.machine.version;
+    end
+    if isfield(handles.machine, 'model')
+        data{4,2} = handles.machine.model;
+    end
+    if isfield(handles.machine, 'institution')
+        if length(handles.machine.institution) > 23
+            data{5,2} = handles.machine.institution(1:23);
+        else
+            data{5,2} = handles.machine.institution;
+        end
+    end
+    data{6,2} = sprintf('%0.2f Gy/min', handles.k);
     set(handles.machine_table, 'Data', data);
     
     % Update beam columns
@@ -425,7 +482,7 @@ if iscell(name) || sum(name ~= 0)
         % Set input fields
         data{1,1+i} = sprintf('%g°', handles.beams{i}.angle);
         data{2,1+i} = sprintf('Group %i', handles.beams{i}.group);
-        data{3,1+i} = handles.beams{i}.type;
+        data{3,1+i} = strrep(handles.beams{i}.type, ' Conformal', '');
         data{4,1+i} = handles.beams{i}.iso;
         data{5,1+i} = sprintf('%0.2f cm', handles.beams{i}.equivsquare);
         data{6,1+i} = handles.beams{i}.weightpt;
@@ -440,8 +497,16 @@ if iscell(name) || sum(name ~= 0)
     set(handles.beam_table, 'Data', data);
     
     % Calculate dose for each beam
+    tic;
     patient = get(handles.patient_table, 'Data');
     beams = get(handles.beam_table, 'Data');
+    cal = get(handles.cal_table, 'Data');
+    ss = zeros(1,size(cal,2));
+    sds = zeros(1,size(cal,2));
+    for i = 1:size(cal,2)
+        ss(i) = cell2mat(textscan(cal{i,2}, '%f Gy/min'));
+        sds(i) = datenum(cal{i,3});
+    end
     for i = 1:length(handles.beams)
         
         % Validate inputs
@@ -463,12 +528,32 @@ if iscell(name) || sum(name ~= 0)
             beams{18,1+i} = sprintf('%0.2f sec', handles.calcs{i}.time);
             beams{20,1+i} = sprintf('%0.2f%%', 100*(handles.calcs{i}.time - ...
                 handles.beams{i}.plantime)/handles.beams{i}.plantime);
+            
+            % Calculate decay-corrected time
+            if (handles.beams{i}.angle >= 30 && ...
+                    handles.beams{i}.angle < 150)
+                s = ss(1);
+                d = sds(1);
+            elseif (handles.beams{i}.angle >= 150 && ...
+                    handles.beams{i}.angle < 270)
+                s = ss(2);
+                d = sds(2);
+            else
+                s = ss(3);
+                d = sds(3);
+            end
+            beams{19,1+i} = sprintf('%0.2f sec', handles.calcs{i}.time * ...
+                handles.k / s * 1 / exp(-log(2) / handles.halflife * ...
+                (now() - d)));
         else
             Event(sprintf(['Secondary dose calculation inputs are not ', ...
                 'valid for beam %i'], i), 'WARN');
         end
     end
     set(handles.beam_table, 'Data', beams);
+    
+    Event(sprintf(['Report calculations completed successfully in %0.3f ', ...
+        'seconds'], toc));
 end
 
 % Update handles structure

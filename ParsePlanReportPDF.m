@@ -75,6 +75,12 @@ for i = 1:length(content{1})
             strfind(tline, 'DOB:')-1));
         patient.birthdate = datenum(tline(...
             strfind(tline, 'DOB:')+4:end));
+    
+    % Store institution
+    elseif ~isempty(strfind(tline, 'Institution:')) && ...
+            ~isempty(strfind(tline, 'Physician:'))
+        machine.institution = strtrim(tline(strfind(tline, 'Institution:')...
+            +12:strfind(tline, 'Physician:')-1));
         
     % Store software version
     elseif length(tline) > 16 && strcmp(tline(1:16), 'Software Version')
@@ -217,6 +223,11 @@ for i = 1:length(content{4})
         fields = strsplit(tline(22:end), {'(' ')'});
         patient.rxvolume = strtrim(fields{1});
     
+    % Store diagnosis
+    elseif ~isempty(strfind(tline, 'Diagnosis:'))
+        patient.diagnosis = ...
+            strtrim(tline(strfind(tline, 'Diagnosis:')+10:end));
+        
     % Store prescription
     elseif ~isempty(tline) 
         fields = textscan(tline, '%f/%f/%f %f to %f%% %f %f %f');
