@@ -22,7 +22,7 @@ function varargout = HandCalcUI(varargin)
 
 % Edit the above text to modify the response to help HandCalcUI
 
-% Last Modified by GUIDE v2.5 24-Feb-2016 10:44:09
+% Last Modified by GUIDE v2.5 24-Feb-2016 16:30:45
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -55,6 +55,9 @@ function HandCalcUI_OpeningFcn(hObject, ~, handles, varargin)
 % Choose default command line output for HandCalcUI
 handles.output = hObject;
 
+% Declare planning source strength, in Gy/min
+handles.k = 1.85; 
+
 % Set version_text handle
 handles.version = '0.9';
 
@@ -63,6 +66,7 @@ handles.version = '0.9';
 
 % Set current directory to location of this application
 cd(path);
+handles.path = path;
 
 % clear_button temporary variable
 clear path;
@@ -92,12 +96,6 @@ Event(string, 'INIT');
 % Set version_text UI text
 set(handles.version_text, 'String', sprintf('Version %s', handles.version));
 
-% Disable print_button button
-set(handles.print_button, 'enable', 'off');
-
-% Disable clear_button button
-set(handles.clear_button, 'enable', 'off');
-
 % Specify Row Names
 handles.patient_rows = {
     'Patient ID'
@@ -106,6 +104,8 @@ handles.patient_rows = {
     'Diagnosis'
     'Prescription'
     'Fractions'
+    'Density CT'
+    'Density Overrides'
     'Plan Name'
     'Approved By'
 };
@@ -115,6 +115,7 @@ handles.machine_rows = {
     'Software Version'
     'Model'
     'Institution'
+    'Planning Strength'
 };
 handles.cal_rows = {
     'Head 1'
@@ -140,8 +141,8 @@ handles.beam_rows = {
     'OAR'
     'Couch Factor'
     'Calculated Time'
+    'Decay Corrected'
     'Difference'
-    'Decay Corrected Time'
 };
 
 % Initialize tables
@@ -153,6 +154,14 @@ set(handles.cal_table, 'Data', horzcat(handles.cal_rows, ...
     cell(length(handles.cal_rows), 1)));
 set(handles.beam_table, 'Data', horzcat(handles.beam_rows, ...
     cell(length(handles.beam_rows), 1)));
+
+%% Update source strength
+Event(sprintf('Planning ideal source strength defaulted to %0.3f Gy/min', ...
+    handles.k));
+data = get(handles.machine_table, 'Data');
+data{6,2} = sprintf('%0.3f Gy/min', handles.k);
+set(handles.machine_table, 'Data', data);
+clear data;
 
 %% Load calibration report
 % Define source report directory
@@ -173,6 +182,16 @@ if ~isempty(report)
     % Load calibration data
     handles.calibration = ParseSourceTrackingPDF(handles.sourcefolder, ...
         report.name);
+    
+    % Update calibration table
+    Event('Updating calibration table');
+    data = get(handles.cal_table, 'Data');
+    for i = 1:length(handles.calibration.strength)
+        data{i,2} = sprintf('%0.3f Gy/min', handles.calibration.strength{i});
+        data{i,3} = datestr(handles.calibration.strengthdate{i}, 'mm/dd/yyyy');
+    end
+    set(handles.cal_table, 'Data', data);
+    clear data;
 
 % Otherwise no calibration data was found
 else
@@ -182,6 +201,10 @@ end
 
 
 %% Finish up
+% Unit test flag. This will be set to 1 if the application is being run as
+% part of unit testing (see UnitTest for more information)
+handles.unitflag = 0;
+
 % Log completion
 Event('Initialization completed. Click Browse to load a plan report.');
 
@@ -189,7 +212,7 @@ Event('Initialization completed. Click Browse to load a plan report.');
 guidata(hObject, handles);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function varargout = HandCalcUI_OutputFcn(hObject, eventdata, handles) 
+function varargout = HandCalcUI_OutputFcn(~, ~, handles) 
 % varargout  cell array for returning output args (see VARARGOUT);
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version_text of MATLAB
@@ -200,11 +223,16 @@ varargout{1} = handles.output;
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function print_button_Callback(hObject, eventdata, handles)
+function print_button_Callback(~, ~, handles) %#ok<*DEFNU>
 % hObject    handle to print_button (see GCBO)
 % eventdata  reserved - to be defined in a future version_text of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+% Log event
+Event('Print button selected');
+
+% Execute PrintReport, passing current handles structure as data
+PrintReport('Data', handles);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function clear_button_Callback(hObject, eventdata, handles)
@@ -212,6 +240,47 @@ function clear_button_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version_text of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+% Log event
+Event('Clearing all data');
+
+% Clear patient table
+data = get(handles.patient_table, 'Data');
+for i = 1:size(data,1)
+    data{i,2} = [];
+end
+set(handles.patient_table, 'Data', data);
+
+% Clear machine table
+data = get(handles.machine_table, 'Data');
+for i = 1:size(data,1)
+    data{i,2} = [];
+end
+set(handles.machine_table, 'Data', data);
+
+% Clear beams table
+data = get(handles.beam_table, 'Data');
+for i = 1:size(data,1)
+    for j = 2:size(data,2)
+        data{i,j} = [];
+    end
+end
+set(handles.beam_table, 'Data', data);
+
+% Clear report
+set(handles.report, 'String', '');
+
+% Clear internal variables
+handles.patient = struct;
+handles.machine = struct;
+handles.beams = cell(0);
+handles.points = cell(0);
+handles.calcs = cell(0);
+
+% Clear temporary variable
+clear data
+
+% Update handles structure
+guidata(hObject, handles);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function report_Callback(hObject, eventdata, handles)
@@ -237,9 +306,176 @@ function browse_button_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version_text of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+% Log event
+Event('Report browse button selected');
+
+% Request the user to select the plan report
+Event('UI window opened to select file');
+[name, path] = uigetfile({'*.pdf', 'Plan PDF Report (.pdf)'; '*.txt', ...
+    'Plan Text Report (.txt)'}, 'Select the plan report PDF or text file', ...
+    handles.path);
+
+% If a file was selected
+if iscell(name) || sum(name ~= 0)
+    
+    % Update text box with file name
+    set(handles.report, 'String', fullfile(path, name));
+           
+    % Log names
+    Event([fullfile(path, name),' selected']);
+    
+    % Update default path
+    handles.path = path;
+    Event(['Default file path updated to ', path]);
+    
+    % If the user selected PDF data
+    if ~isempty(regexpi(name, '.pdf$'))
+        
+        % Parse text file using ParsePlanTextReport
+        [handles.patient, handles.machine, handles.points, handles.beams] ...
+            = ParsePlanReportPDF(path, name);
+        
+    % Or if the user selected TXT data    
+    elseif ~isempty(regexpi(name, '.txt$'))
+        
+        % Parse text file using ParsePlanTextReport
+        [handles.patient, handles.machine, handles.points, handles.beams] ...
+            = ParsePlanReportText(path, name);
+    else
+        Event('An unknown file format was selected', 'ERROR');
+    end
+    
+    % Get the number of fractions, if not provided
+    if ~isfield(handles.patient, 'fractions')
+        handles.patient.fractions = str2double(inputdlg(...
+            'Enter the number of fractions'));
+    end
+    
+    % Set patient data
+    data = get(handles.patient_table, 'Data');
+    data{1,2} = handles.patient.id;
+    data{2,2} = handles.patient.name;
+    data{6,2} = sprintf('%i', handles.patient.fractions);
+    set(handles.patient_table, 'Data', data);
+    
+    % Set machine data
+    data = get(handles.machine_table, 'Data');
+    data{1,2} = 'ViewRay MRIdian';
+    if isfield(handles.machine, 'serial')
+        data{2,2} = handles.machine.serial;
+    end
+    set(handles.machine_table, 'Data', data);
+    
+    % Update beam columns
+    set(handles.beam_table, 'ColumnEditable', logical(horzcat(0, ...
+        ones(1,length(handles.beams)))));
+    set(handles.beam_table, 'ColumnFormat', ...
+        cell(1, length(handles.beams) + 1));
+    names = cell(1, length(handles.beams)+1);
+    widths = cell(1, length(handles.beams)+1);
+    names{1} = 'Specification';
+    widths{1} = 150;
+    for i = 1:length(handles.beams)
+        names{i+1} = sprintf('Beam %i', i);
+        widths{i+1} = 80;
+    end
+    set(handles.beam_table, 'ColumnName', names);
+    set(handles.beam_table, 'ColumnWidth', widths);
+    clear names widths;
+    
+    % Set beam report data
+    data = get(handles.beam_table, 'Data');
+    for i = 1:length(handles.beams)
+        
+        % Initialize point indices
+        isopt = 0;
+        calcpt = 0;
+        
+        % Get the calc point index
+        for j = 1:length(handles.points)
+            if strcmp(handles.beams{i}.weightpt, handles.points{j}.name)
+                calcpt = j;
+                break;
+            end
+        end
+        
+        % Get the iso point index
+        for j = 1:length(handles.points)
+            if strcmp(handles.beams{i}.iso, handles.points{j}.name)
+                isopt = j;
+                break;
+            end
+        end
+        
+        % Get the calc point dose, if not set
+        if ~isfield(handles.points{calcpt}, 'dose')
+            handles.points{calcpt}.dose = str2double(inputdlg(sprintf(...
+            'Enter the total dose to point %s in Gy', ...
+            handles.points{calcpt}.name)));
+        end
+        
+        % Get calc point weight, if not set
+        if ~isfield(handles.beams{i}, 'weight') || ...
+                isempty(handles.beams{i}.weight)
+            handles.beams{i}.weight = str2double(inputdlg(sprintf(...
+            'Enter the weight of beam %i to calc point %s as a percent', ...
+            i, handles.points{calcpt}.name)));
+        end
+        
+        % Set input fields
+        data{1,1+i} = sprintf('%g°', handles.beams{i}.angle);
+        data{2,1+i} = sprintf('Group %i', handles.beams{i}.group);
+        data{3,1+i} = handles.beams{i}.type;
+        data{4,1+i} = handles.beams{i}.iso;
+        data{5,1+i} = sprintf('%0.2f cm', handles.beams{i}.equivsquare);
+        data{6,1+i} = handles.beams{i}.weightpt;
+        data{7,1+i} = sprintf('%0.3f Gy', handles.points{calcpt}.dose);
+        data{8,1+i} = sprintf('%0.2f%%', handles.beams{i}.weight);
+        data{9,1+i} = sprintf('%0.2f cm', handles.beams{i}.ssd(calcpt));
+        data{10,1+i} = sprintf('%0.2f cm', handles.beams{i}.depth(calcpt));
+        data{11,1+i} = sprintf('%0.2f cm', handles.beams{i}.edepth(calcpt));
+        data{12,1+i} = sprintf('%0.2f cm', handles.beams{i}.oad(isopt));
+        data{13,1+i} = sprintf('%0.2f sec', handles.beams{i}.plantime);
+    end
+    set(handles.beam_table, 'Data', data);
+    
+    % Calculate dose for each beam
+    patient = get(handles.patient_table, 'Data');
+    beams = get(handles.beam_table, 'Data');
+    for i = 1:length(handles.beams)
+        
+        % Validate inputs
+        if ValidateCalcInputs(patient, beams, i)
+            
+            % Calculate dose for beam
+            handles.calcs{i} = CalculateBeamTime('k', handles.k, 'angle', ...
+                handles.beams{i}.angle, 'r', handles.beams{i}.equivsquare, ...
+                'dose', handles.points{calcpt}.dose * ...
+                handles.beams{i}.weight / 100 / handles.patient.fractions, ...
+                'depth', handles.beams{i}.edepth(calcpt), 'oad', ...
+                handles.beams{i}.oad(isopt));
+            
+            % Set calculated fields
+            beams{14,1+i} = sprintf('%0.4f', handles.calcs{i}.tpr);
+            beams{15,1+i} = sprintf('%0.4f', handles.calcs{i}.scp);
+            beams{16,1+i} = sprintf('%0.4f', handles.calcs{i}.oar);
+            beams{17,1+i} = sprintf('%0.4f', handles.calcs{i}.cf);
+            beams{18,1+i} = sprintf('%0.2f sec', handles.calcs{i}.time);
+            beams{20,1+i} = sprintf('%0.2f%%', 100*(handles.calcs{i}.time - ...
+                handles.beams{i}.plantime)/handles.beams{i}.plantime);
+        else
+            Event(sprintf(['Secondary dose calculation inputs are not ', ...
+                'valid for beam %i'], i), 'WARN');
+        end
+    end
+    set(handles.beam_table, 'Data', beams);
+end
+
+% Update handles structure
+guidata(hObject, handles);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function figure1_SizeChangedFcn(hObject, eventdata, handles)
+function figure1_SizeChangedFcn(hObject, ~, handles)
 % hObject    handle to figure1 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)

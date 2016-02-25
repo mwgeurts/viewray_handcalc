@@ -62,7 +62,7 @@ for i = 1:length(content{1})
     % Store source activity date
     elseif length(tline) > 17 && strcmp(tline(1:17), 'Certificate Date:')
         calibration.activitydate{length(calibration.activitydate)+1} = ...
-            datestr(strtrim(tline(18:end)));
+            datenum(strtrim(tline(18:end)));
         
     % Store source activity
     elseif length(tline) > 31 && strcmp(tline(1:31), 'Certificate Strength in Curies:')
@@ -77,11 +77,17 @@ for i = 1:length(content{1})
     % Store source strength date
     elseif length(tline) > 24 && strcmp(tline(1:24), 'Measurement Date (TG51):')
         calibration.strengthdate{length(calibration.strengthdate)+1} = ...
-            datestr(strtrim(tline(25:end)));
-    
+            datenum(strtrim(tline(25:end)));
     end
 end
 
+% Log completion and image size
+if ~isempty(calibration.strength)
+    if exist('Event', 'file') == 2
+        Event(sprintf(['Source calibration for %i heads parsed in ', ...
+            '%0.3f seconds'], length(calibration.strength), toc));
+    end
+end
 
 
 

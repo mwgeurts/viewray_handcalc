@@ -1,4 +1,4 @@
-function [patient, machine, points, beams] = ParsePlanTextReport(varargin)
+function [patient, machine, points, beams] = ParsePlanReportText(varargin)
 
 
 
@@ -14,10 +14,10 @@ if nargin >= 1
 else
     if exist('Event', 'file') == 2
         Event(['At least one argument must be passed to ', ...
-            'ParsePlanTextReport'], 'ERROR');
+            'ParsePlanReportText'], 'ERROR');
     else
         error(['At least one argument must be passed to ', ...
-            'ParsePlanTextReport']);
+            'ParsePlanReportText']);
     end
 end
 
@@ -41,7 +41,7 @@ if fid < 0
 end
 
 % Get the first line
-tline = strtrim(regexprep(fgetl(fid), '[ ]+', ' '));
+tline = fgetl(fid);
 
 % Validate first line
 if ~strcmp(tline, 'ViewRay Plan Information')
@@ -54,6 +54,9 @@ end
 
 % Loop through remaining lines
 while ischar(tline)
+    
+    % Parse line
+    tline = strtrim(regexprep(tline, '[ ]+', ' '));
     
     % Store patient ID
     if length(tline) > 11 && strcmp(tline(1:11), 'Patient ID:')
@@ -77,6 +80,9 @@ while ischar(tline)
         % Loop through remaining lines
         while ischar(tline)
             
+            % Parse line
+            tline = strtrim(regexprep(tline, '[ ]+', ' '));
+    
             % Look for next section
             if length(tline) >= 24 && ...
                     strcmp(tline(1:24), 'Optimization Constraints')
@@ -94,19 +100,22 @@ while ischar(tline)
             end
             
             % Get next line
-            tline = strtrim(regexprep(fgetl(fid), '[ ]+', ' '));
+            tline = fgetl(fid);
         end
     
     % Search for electron density
     elseif length(tline) >= 25 && strcmp(tline(1:25), ...
             'Electron Density Settings')
         
-        patient.densityCT = '';
-        patient.densityOverrides = cell(0);
+        patient.densityct = '';
+        patient.densityoverrides = cell(0);
         
         % Loop through remaining lines
         while ischar(tline)
             
+            % Parse line
+            tline = strtrim(regexprep(tline, '[ ]+', ' '));
+    
             % Look for next section
              if length(tline) >= 26 && strcmp(tline(1:26), 'Planning Beam Angle Group:')
                 fseek(fid, -length(tline)-2, 0);
@@ -115,14 +124,15 @@ while ischar(tline)
             % Store density CT
             elseif length(tline) > 18 && strcmp(tline(1:18), ...
                     'CT Base Image UID:')
-                patient.densityCT = tline(21:end);
+                patient.densityct = tline(21:end);
             
             % Store density overrides
             elseif length(tline) >= 28 && strcmp(tline(1:28), ...
                     'Structure Density Overrides:')
                 
                 % Loop through structures
-                tline = strtrim(regexprep(fgetl(fid), '[ ]+', ' '));
+                tline = fgetl(fid);
+                
                 while ischar(tline) && ~isempty(tline)
                     fields = strsplit(tline, {':' '(' ')'});
                     
@@ -130,17 +140,17 @@ while ischar(tline)
                     i = cell2mat(textscan(fields{3}, 'Priority %f'));
                     
                     % Store name and density
-                    patient.densityOverrides{i}.name = strtrim(fields{1});
-                    patient.densityOverrides{i}.density = ...
+                    patient.densityoverrides{i}.name = strtrim(fields{1});
+                    patient.densityoverrides{i}.density = ...
                         str2double(fields{2});
                     
                     % Get next line
-                    tline = strtrim(regexprep(fgetl(fid), '[ ]+', ' '));
+                    tline = fgetl(fid);
                 end
             end
             
             % Get next line
-            tline = strtrim(regexprep(fgetl(fid), '[ ]+', ' '));
+            tline = fgetl(fid);
         end
         
     % Search for beam angle group
@@ -150,15 +160,18 @@ while ischar(tline)
         i = 0;
         
         % Get next line
-        tline = strtrim(regexprep(fgetl(fid), '[ ]+', ' '));
+        tline = fgetl(fid);
             
         % Loop through remaining lines
         while ischar(tline)
             
+            % Parse line
+            tline = strtrim(regexprep(tline, '[ ]+', ' '));
+    
             % Look for next section
             if length(tline) >= 26 && strcmp(tline(1:26), ...
                     'Planning Beam Angle Group:')
-                fseek(fid, -length(tline)-2, 0);
+                fseek(fid, -40, 0);
                 break;
                 
             % Store group isocenter point
@@ -197,9 +210,9 @@ while ischar(tline)
             elseif length(tline) > 24 && strcmp(tline(1:24), ...
                     'Open Field Eq. Sq. (cm):')
                 try
-                    beams{i}.equivSquare = str2double(tline(25:end));
+                    beams{i}.equivsquare = str2double(tline(25:end));
                 catch
-                    beams{i}.equivSquare = 0;
+                    beams{i}.equivsquare = 0;
                 end
             
             % Store weight point
@@ -239,12 +252,12 @@ while ischar(tline)
             end
             
             % Get next line
-            tline = strtrim(regexprep(fgetl(fid), '[ ]+', ' '));
+            tline = fgetl(fid);
         end
     end
 
     % Get next line
-    tline = strtrim(regexprep(fgetl(fid), '[ ]+', ' '));
+    tline = fgetl(fid);
 end
 
 % Close file handle
