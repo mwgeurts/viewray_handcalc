@@ -1,26 +1,39 @@
 function varargout = HandCalcUI(varargin)
-% HANDCALCUI MATLAB code for HandCalcUI.fig
-%      HANDCALCUI, by itself, creates a new HANDCALCUI or raises the existing
-%      singleton*.
+% HandCalcUI launches the graphical user interface for this application.
+% The ViewRay Secondary Dose Calculator Tool tool was developed to read in 
+% ViewRay fixed conformal plan reports, extract the beam data (angle, field 
+% size, depth, etc.), and recalculate the beam time using a two-dimensional 
+% (2D) dose calculation algorithm using simplified measured beam data. The
+% planned beam time is then compared to the recalculated beam time to check
+% for major dosimetric discrepancies. A report can also be printed to 
+% document the check.
 %
-%      H = HANDCALCUI returns the handle to a new HANDCALCUI or the handle to
-%      the existing singleton*.
+% Following installation, this tool can be launched the application 
+% shortcut (if installed as a MATLAB application) or by executing 
+% HandCalcUI(). Then, click "Browse" and select a ViewRay plan PDF or text
+% report. This tool can only be used with fixed conformal plans or
+% optimized conformal if the relative dose from each beam to a reference 
+% point is known.
+% 
+% This function defines several global variables which are used during
+% calculation. See the wiki for more information on these variables and
+% their function, as well as to learn more about the computational methods.
 %
-%      HANDCALCUI('CALLBACK',hObject,eventData,handles,...) calls the local
-%      function named CALLBACK in HANDCALCUI.M with the given input arguments.
+% Author: Mark Geurts, mark.w.geurts@gmail.com
+% Copyright (C) 2016 University of Wisconsin Board of Regents
 %
-%      HANDCALCUI('Property','Value',...) creates a new HANDCALCUI or raises the
-%      existing singleton*.  Starting from the left, property value pairs are
-%      applied to the GUI before HandCalcUI_OpeningFcn gets called.  An
-%      unrecognized property name or invalid value makes property application
-%      stop.  All inputs are passed to HandCalcUI_OpeningFcn via varargin.
+% This program is free software: you can redistribute it and/or modify it 
+% under the terms of the GNU General Public License as published by the  
+% Free Software Foundation, either version 3 of the License, or (at your 
+% option) any later version.
 %
-%      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only one
-%      instance to run (singleton)".
-%
-% See also: GUIDE, GUIDATA, GUIHANDLES
-
-% Edit the above text to modify the response to help HandCalcUI
+% This program is distributed in the hope that it will be useful, but 
+% WITHOUT ANY WARRANTY; without even the implied warranty of 
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General 
+% Public License for more details.
+% 
+% You should have received a copy of the GNU General Public License along 
+% with this program. If not, see http://www.gnu.org/licenses/.
 
 % Last Modified by GUIDE v2.5 25-Feb-2016 21:33:02
 
@@ -43,7 +56,6 @@ else
 end
 % End initialization code - DO NOT EDIT
 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function HandCalcUI_OpeningFcn(hObject, ~, handles, varargin)
 % This function has no output args, see OutputFcn.
@@ -58,6 +70,7 @@ handles.output = hObject;
 % Declare default planning source strength, in Gy/min
 handles.k = 1.85; 
 
+%% Global variables
 % Declare default machine name and serial number
 handles.defaultmachine = 'ViewRay MRIdian';
 handles.defaultserial = '101';
@@ -68,6 +81,7 @@ handles.halflife = 1925.2;
 % Set version_text handle
 handles.version = '0.9';
 
+%% Prepare path, logs
 % Determine path of current application
 [path, ~, ~] = fileparts(mfilename('fullpath'));
 
@@ -103,7 +117,7 @@ Event(string, 'INIT');
 % Set version_text UI text
 set(handles.version_text, 'String', sprintf('Version %s', handles.version));
 
-% Specify Row Names
+% Specify patient row names
 handles.patient_rows = {
     'Patient ID'
     'Name'
@@ -116,6 +130,8 @@ handles.patient_rows = {
     'Plan Name'
     'Approved By'
 };
+
+% Specify machine row names
 handles.machine_rows = {
     'Machine Name'
     'Serial Number'
@@ -124,11 +140,15 @@ handles.machine_rows = {
     'Institution'
     'Planning Strength'
 };
+
+% Specify calibration rows
 handles.cal_rows = {
     'Head 1'
     'Head 2'
     'Head 3'
 };
+
+% Specify beam rows
 handles.beam_rows = {
     'Angle'
     'Group'
@@ -185,11 +205,21 @@ if ~isempty(report)
     % Update calibration table
     Event('Updating calibration table');
     data = get(handles.cal_table, 'Data');
+    
+    % Loop through calibration strengths
     for i = 1:length(handles.calibration.strength)
-        data{i,2} = sprintf('%0.3f Gy/min', handles.calibration.strength{i});
-        data{i,3} = datestr(handles.calibration.strengthdate{i}, 'mm/dd/yyyy');
+        
+        % Set strength and calibration date
+        data{i,2} = sprintf('%0.3f Gy/min', ...
+            handles.calibration.strength{i});
+        data{i,3} = datestr(handles.calibration.strengthdate{i}, ...
+            'mm/dd/yyyy');
     end
+    
+    % Set updated values
     set(handles.cal_table, 'Data', data);
+    
+    % Clear temporary variable
     clear data;
 
 % Otherwise no calibration data was found
@@ -219,7 +249,6 @@ function varargout = HandCalcUI_OutputFcn(~, ~, handles)
 
 % Get default command line output from handles structure
 varargout{1} = handles.output;
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function print_button_Callback(~, ~, handles) %#ok<*DEFNU>
@@ -294,13 +323,13 @@ function report_Callback(~, ~, ~)
 % eventdata  reserved - to be defined in a future version_text of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function report_CreateFcn(hObject, ~, ~)
 % hObject    handle to report (see GCBO)
 % eventdata  reserved - to be defined in a future version_text of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
+% Set background color
 if ispc && isequal(get(hObject,'BackgroundColor'), ...
         get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
@@ -347,6 +376,8 @@ if iscell(name) || sum(name ~= 0)
         % Parse text file using ParsePlanTextReport
         [handles.patient, handles.machine, handles.points, handles.beams] ...
             = ParsePlanReportText(path, name);
+    
+    % Otherwise throw an error
     else
         Event('An unknown file format was selected', 'ERROR');
     end
@@ -357,107 +388,201 @@ if iscell(name) || sum(name ~= 0)
             'Enter the number of fractions'));
     end
     
-    % Set patient data
+    %% Set patient data
+    % Get patient table contents
     data = get(handles.patient_table, 'Data');
+    
+    % Update patient ID
     data{1,2} = handles.patient.id;
+    
+    % Update name
     data{2,2} = handles.patient.name;
+    
+    % Update birthdate if present
     if isfield(handles.patient, 'birthdate')
         data{3,2} = datestr(handles.patient.birthdate, 'mm/dd/yyyy');
     end
+    
+    % Update diagnosis if present
     if isfield(handles.patient, 'diagnosis')
         data{4,2} = handles.patient.diagnosis;
     end
+    
+    % Update prescription if all fields are present
     if isfield(handles.patient, 'rxvolume') && ...
             isfield(handles.patient, 'rxdose') && ...
             isfield(handles.patient, 'rxpercent')
+        
+        % Write prescription as "Dose to % of Structure"
         data{5,2} = sprintf('%0.1f Gy to %0.1f%% of %s', ...
             handles.patient.rxdose, handles.patient.rxpercent, ...
             handles.patient.rxvolume);
     end
+    
+    % Update number of fractions
     data{6,2} = sprintf('%i', handles.patient.fractions);
+    
+    % Update density CT information if present
     if isfield(handles.patient, 'densityct')
+        
+        % If no CT UID exists, state 'None'
         if isempty(handles.patient.densityct)
             data{7,2} = 'None';
+            
+        % Otherwise state 'CT'
         else
             data{7,2} = 'CT';
         end
     end
+    
+    % Update list of structure density overrides, in prioritized order
     if isfield(handles.patient, 'densityoverrides')
+        
+        % Start with an empty cell
         data{8,2} = '';
+        
+        % Loop through structures list, in reverse order of priority
         for i = length(handles.patient.densityoverrides):-1:1
+            
+            % If a structure exists at this priority
             if ~isempty(handles.patient.densityoverrides{i})
+                
+                % If this is the first structure, just write the structure
+                % and overridden density
                 if isempty(data{8,2})
                     data{8,2} = sprintf('%s (%0.3f g/cc)', ...
                         handles.patient.densityoverrides{i}.name, ...
                         handles.patient.densityoverrides{i}.density);
+                
+                % Otherwise, append the existing cell contents using a
+                % comma
                 else
                     data{8,2} = sprintf('%s (%0.3f g/cc), %s', ...
                         handles.patient.densityoverrides{i}.name, ...
-                        handles.patient.densityoverrides{i}.density, data{8,2});
+                        handles.patient.densityoverrides{i}.density, ...
+                        data{8,2});
                 end
             end
         end
     end
+    
+    % Update plan name if present
     if isfield(handles.patient, 'plan')
         data{9,2} = handles.patient.plan;
     end
+    
+    % Update plan approval date if present
     if isfield(handles.patient, 'planapproval')
         data{10,2} = handles.patient.planapproval;
     end
+    
+    % Set patient table with updated data
     set(handles.patient_table, 'Data', data);
     
-    % Set machine data
+    %% Set machine data
+    % Get machine table contents
     data = get(handles.machine_table, 'Data');
+    
+    % Update machine name with the global default value
     data{1,2} = handles.defaultmachine;
+    
+    % If a serial number exists, update with that
     if isfield(handles.machine, 'serial')
         data{2,2} = handles.machine.serial;
+        
+    % Otherwise, use the global default value
     else
         data{2,2} = handles.defaultserial;
     end
+    
+    % Update the machine version if present
     if isfield(handles.machine, 'version')
         data{3,2} = handles.machine.version;
     end
+    
+    % Update the dose model if present
     if isfield(handles.machine, 'model')
         data{4,2} = handles.machine.model;
     end
+    
+    % Update the institution if present
     if isfield(handles.machine, 'institution')
+        
+        % If the institution is too long, crop it
         if length(handles.machine.institution) > 23
             data{5,2} = handles.machine.institution(1:23);
         else
             data{5,2} = handles.machine.institution;
         end
     end
+    
+    % Update the planning strength using the global default value
     data{6,2} = sprintf('%0.2f Gy/min', handles.k);
+    
+    % Set the machine table with the updated cells
     set(handles.machine_table, 'Data', data);
     
-    % Update beam columns
+    %% Set beam column information
+    % Update the editable flags boolean array given the number of beams to
+    % be displayed
     set(handles.beam_table, 'ColumnEditable', logical(horzcat(0, ...
         ones(1,length(handles.beams)))));
+    
+    % Update the column format using an empty array given the number of
+    % beams to be displayed
     set(handles.beam_table, 'ColumnFormat', ...
         cell(1, length(handles.beams) + 1));
+    
+    % Initialize a new column names array
     names = cell(1, length(handles.beams)+1);
+    
+    % Initialize a new column widths array
     widths = cell(1, length(handles.beams)+1);
+    
+    % Set the first column name and width
     names{1} = 'Specification';
     widths{1} = 150;
+    
+    % Loop through a column for each beam
     for i = 1:length(handles.beams)
+        
+        % Set the beam column name and width
         names{i+1} = sprintf('Beam %i', i);
         widths{i+1} = 80;
     end
+    
+    % Update the column names and widths array
     set(handles.beam_table, 'ColumnName', names);
     set(handles.beam_table, 'ColumnWidth', widths);
+    
+    % Clear temporary variables
     clear names widths;
     
-    % Set beam report data
+    %% Set beam report data
+    % Get the beam table cell contents
     data = get(handles.beam_table, 'Data');
+    
+    % If only one point exists, use that one as the default calc point
+    if length(handles.points) == 1
+        defaultcalcpt = 1;
+    
+    % Otherwise, initialize an empty flag to store the selected calc point
+    else
+        defaultcalcpt = 0;
+    end
+
+    % Loop through each beam
     for i = 1:length(handles.beams)
         
-        % Initialize point indices (default to first point)
+        % Initialize point indices
         isopt = 1;
-        calcpt = 1;
+        calcpt = defaultcalcpt;
         
-        % Get the calc point index
+        % Get the calc point index from the beams array, if it exists
         if isfield(handles.beams{i}, 'weightpt') && ...
                 ~isempty(handles.beams{i}.weightpt)
+            
+            % Loop through each point
             for j = 1:length(handles.points)
                 if strcmp(handles.beams{i}.weightpt, handles.points{j}.name)
                     calcpt = j;
@@ -474,10 +599,36 @@ if iscell(name) || sum(name ~= 0)
             end
         end
         
+        % If a default calc point was not set
+        if calcpt == 0
+
+            % Initialize point names list
+            names = cell(1, length(handles.points));
+            
+            % Loop through each calc point
+            for j = 1:length(handles.points)
+                names{j} = handles.points{j}.name;
+            end
+            
+            % Prompt user to select a calc point
+            [calcpt, selected] = listdlg('PromptString', ...
+                'Select a point to use for calculation', 'SelectionMode', ...
+                'single', 'ListString', names, 'ListSize', [300 50]);
+            
+            % Make sure the user selected something
+            if selected == 0
+                Event('A calculation point must be selected to continue', ...
+                    'ERROR');
+            end
+            
+            % Update the default calc point to the selected one
+            defaultcalcpt = calcpt;
+        end
+        
         % Get the calc point dose, if not set
         if ~isfield(handles.points{calcpt}, 'dose')
             handles.points{calcpt}.dose = str2double(inputdlg(sprintf(...
-            'Enter the total dose to %s in Gy', ...
+            'Enter the total dose, from all fractions, to %s in Gy', ...
             handles.points{calcpt}.name)));
         end
         
@@ -611,7 +762,7 @@ pos = get(handles.uipanel1, 'Position') .* ...
 
 % Update patient column widths to scale to new table size
 set(handles.patient_table, 'ColumnWidth', ...
-    {floor(0.4*pos(3))-4 floor(0.6*pos(3))-4});
+    {floor(0.4*pos(3))-4 floor(0.6*pos(3))-6});
 
 % Get machine table width
 pos = get(handles.uipanel2, 'Position') .* ...
