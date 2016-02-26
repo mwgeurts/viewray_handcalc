@@ -65,14 +65,112 @@ while ischar(tline)
     % Store patient name
     elseif length(tline) > 13 && strcmp(tline(1:13), 'Patient Name:')
         patient.name = strtrim(tline(14:end));
+        
+    % Store patient birthdate
+    elseif length(tline) > 18 && strcmp(tline(1:18), 'Patient Birthdate:')
+        patient.birthdate = datenum(tline(19:end));
+        
+    % Store diagnosis
+    elseif length(tline) > 10 && strcmp(tline(1:10), 'Diagnosis:')
+        patient.diagnosis = strtrim(tline(11:end));
+        
+    % Store prescription name
+    elseif length(tline) > 13 && strcmp(tline(1:13), 'Prescription:')
+        patient.prescription = strtrim(tline(14:end));
+        
+    % Store plan name
+    elseif length(tline) > 10 && strcmp(tline(1:10), 'Plan Name:')
+        patient.plan = strtrim(tline(11:end));
+        
+    % Store plan approval
+    elseif length(tline) > 17 && strcmp(tline(1:17), 'Plan Approved By:')
+        patient.planapproval = strtrim(tline(18:end));
+        
+    % Store plan ID
+    elseif length(tline) > 8 && strcmp(tline(1:8), 'Plan ID:')
+        patient.planid = strtrim(tline(9:end));
     
+    % Store patient birthdate
+    elseif length(tline) > 19 && strcmp(tline(1:19), 'Plan Last Modified:')
+        patient.lastmodified = datenum(tline(20:end));
+        
+    % Store physician
+    elseif length(tline) > 10 && strcmp(tline(1:10), 'Physician:')
+        patient.physician = strtrim(tline(11:end));
+        
+    % Store physicist
+    elseif length(tline) > 10 && strcmp(tline(1:10), 'Physicist:')
+        patient.physicist = strtrim(tline(11:end));
+        
+    % Store dosimetrist
+    elseif length(tline) > 12 && strcmp(tline(1:12), 'Dosimetrist:')
+        patient.dosimetrist = strtrim(tline(13:end));
+        
     % Store machine name
     elseif length(tline) > 13 && strcmp(tline(1:13), 'Machine Name:')
         machine.name = strtrim(tline(14:end));
         
     % Store machine serial number
     elseif length(tline) > 14 && strcmp(tline(1:14), 'Serial Number:')
-        machine.serial = strtrim(tline(15:end));
+        fields = strsplit(tline(15:end), '-');     
+        machine.serial = strtrim(fields{1});
+        
+    % Store software version
+    elseif length(tline) > 17 && strcmp(tline(1:17), 'Software Version:')
+        fields = strsplit(tline(18:end), '-');
+        if length(fields) > 1
+            machine.version = strtrim(fields{2});
+        else
+            machine.version = strtrim(fields{1});
+        end
+    
+    % Store dose model
+    elseif length(tline) > 16 && strcmp(tline(1:16), 'Equipment Model:')
+        machine.model = strtrim(tline(17:end));
+        
+    % Store institution
+    elseif length(tline) > 12 && strcmp(tline(1:12), 'Institution:')
+        machine.institution = strtrim(tline(13:end));
+        
+    % Store department
+    elseif length(tline) > 11 && strcmp(tline(1:11), 'Department:')
+        machine.department = strtrim(tline(12:end));
+        
+    % Store beam on time specification
+    elseif length(tline) > 25 && strcmp(tline(1:25), ...
+            'Beam-On Time Reported As:')
+        machine.timespec = strtrim(tline(26:end));
+        
+    % Store prescription
+    elseif length(tline) > 23 && strcmp(tline(1:23), ...
+            'Total Prescription Dose')
+        [tokens,~] = regexp(tline, ['''([^'']+)'': ([0-9\.]+) Gy', ...
+            '( to )?([0-9\.]+)?'], 'tokens', 'match');
+        if ~isempty(tokens)
+            patient.rxvolume = strtrim(tokens{1}{1});
+            patient.rxdose = str2double(tokens{1}{2});
+            if length(tokens{1}) == 4
+                patient.rxpercent = str2double(tokens{1}{4});
+            end
+        end
+        
+    % Store number of fractions
+    elseif length(tline) > 30 && strcmp(tline(1:30), ...
+            'Prescription Dose Per Fraction')
+        [tokens,~] = regexp(tline, '([0-9\.]+) Gy', 'tokens', 'match');
+        if ~isempty(tokens)
+            patient.fractions = str2double(tokens{1}{1}) / patient.rxdose;
+        end
+    
+     % Store patient position acronym
+    elseif length(tline) > 20 && strcmp(tline(1:20), ...
+            'Patient Orientation:')
+        patient.position = regexprep(tline(21:end), '[^A-Z]', ''); 
+        
+    % Store couch position
+    elseif length(tline) > 28 && strcmp(tline(1:28), ...
+            'Couch Position (cm) (x,y,z):')
+        patient.couch = cell2mat(textscan(tline(29:end), '%f, %f, %f')); 
     
     % Store points
     elseif length(tline) >= 19 && strcmp(tline(1:19), 'RealTarget Settings')
