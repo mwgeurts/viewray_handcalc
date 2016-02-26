@@ -156,7 +156,7 @@ handles.beam_rows = {
     'Isocenter'
     'Open Field Size'
     'Calc Point (CP)'
-    'Total Dose to CP'
+    'Fraction Dose to CP'
     'Weight to CP'
     'SSD to CP'
     'Depth to CP'
@@ -330,9 +330,33 @@ function report_CreateFcn(hObject, ~, ~)
 % handles    empty - handles not created until after all CreateFcns called
 
 % Set background color
-if ispc && isequal(get(hObject,'BackgroundColor'), ...
-        get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
+if ispc && isequal(get(hObject, 'BackgroundColor'), ...
+        get(0, 'defaultUicontrolBackgroundColor'))
+    set(hObject, 'BackgroundColor', 'white');
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function difference_Callback(hObject, ~, handles)
+% hObject    handle to difference (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Revert to stored value
+set(hObject, 'String', sprintf('%0.2f%%', handles.meandiff));
+
+% Update handles structure
+guidata(hObject, handles);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function difference_CreateFcn(hObject, ~, ~)
+% hObject    handle to difference (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Set background
+if ispc && isequal(get(hObject, 'BackgroundColor'), ...
+        get(0, 'defaultUicontrolBackgroundColor'))
+    set(hObject, 'BackgroundColor', 'white');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -384,6 +408,8 @@ if iscell(name) || sum(name ~= 0)
     
     % Get the number of fractions, if not provided
     if ~isfield(handles.patient, 'fractions')
+        
+        % Prompt the user to enter the number of fractions
         handles.patient.fractions = str2double(inputdlg(...
             'Enter the number of fractions'));
     end
@@ -625,55 +651,99 @@ if iscell(name) || sum(name ~= 0)
             defaultcalcpt = calcpt;
         end
         
-        % Get the calc point dose, if not set
+        % If the calc point dose is not set
         if ~isfield(handles.points{calcpt}, 'dose')
+            
+            % Prompt the user to enter the total dose
             handles.points{calcpt}.dose = str2double(inputdlg(sprintf(...
-            'Enter the total dose, from all fractions, to %s in Gy', ...
-            handles.points{calcpt}.name)));
+                'Enter the total dose, from all fractions, to %s in Gy', ...
+                handles.points{calcpt}.name)));
         end
         
-        % Get calc point weight, if not set
+        % If the weight percentage for this beam is not set
         if ~isfield(handles.beams{i}, 'weight') || ...
                 isempty(handles.beams{i}.weight)
+            
+            % Prompt the user to enter the weight
             handles.beams{i}.weight = str2double(inputdlg(sprintf(...
-            'Enter the weight of beam %i to %s as a percent', ...
-            i, handles.points{calcpt}.name)));
+                'Enter the weight of beam %i to %s as a percent', ...
+                i, handles.points{calcpt}.name)));
         end
         
-        % Set input fields
+        % Update beam angles
         data{1,1+i} = sprintf('%g°', handles.beams{i}.angle);
+        
+        % Update beam group
         data{2,1+i} = sprintf('Group %i', handles.beams{i}.group);
+        
+        % Update beam type, removing 'Conformal' to shorten it (so it will
+        % fit better in the report)
         data{3,1+i} = strrep(handles.beams{i}.type, ' Conformal', '');
+        
+        % Update the beam isocenter
         data{4,1+i} = handles.beams{i}.iso;
+        
+        % Update the equivalent square field, in cm
         data{5,1+i} = sprintf('%0.2f cm', handles.beams{i}.equivsquare);
+        
+        % Update the calc point name
         data{6,1+i} = handles.points{calcpt}.name;
-        data{7,1+i} = sprintf('%0.3f Gy', handles.points{calcpt}.dose);
+        
+        % Update the calc point dose per fraction
+        data{7,1+i} = sprintf('%0.3f Gy', handles.points{calcpt}.dose / ...
+            handles.patient.fractions);
+        
+        % Update the beam weight, in %
         data{8,1+i} = sprintf('%0.2f%%', handles.beams{i}.weight);
+        
+        % Update the SSD, in cm
         data{9,1+i} = sprintf('%0.2f cm', handles.beams{i}.ssd(calcpt));
+        
+        % Update the physical depth, in cm
         data{10,1+i} = sprintf('%0.2f cm', handles.beams{i}.depth(calcpt));
+        
+        % Update the effective depth, in cm
         data{11,1+i} = sprintf('%0.2f cm', handles.beams{i}.edepth(calcpt));
+        
+        % Update the off axis distance, in cm
         data{12,1+i} = sprintf('%0.2f cm', handles.beams{i}.oad(isopt));
+        
+        % Update the planned time, in sec
         data{13,1+i} = sprintf('%0.2f sec', handles.beams{i}.plantime);
     end
+    
+    % Set the beam table with the updated cells
     set(handles.beam_table, 'Data', data);
     
-    % Calculate dose for each beam
+    %% Calculate dose for each beam
+    % Start timer
     tic;
+    
+    % Get the patient, beams, and calibration table data
     patient = get(handles.patient_table, 'Data');
     beams = get(handles.beam_table, 'Data');
     cal = get(handles.cal_table, 'Data');
+    
+    % Initialize source strengths and dates arrays
     ss = zeros(1,size(cal,2));
     sds = zeros(1,size(cal,2));
+    
+    % Loop through each head
     for i = 1:size(cal,2)
+        
+        % Store the strength and date as numbers
         ss(i) = cell2mat(textscan(cal{i,2}, '%f Gy/min'));
         sds(i) = datenum(cal{i,3});
     end
+    
+    % Loop through each beam
     for i = 1:length(handles.beams)
         
-        % Validate inputs
+        % Execute ValidateCalcInputs() to check if calculation can be
+        % completed successfully
         if ValidateCalcInputs(patient, beams, i)
             
-            % Calculate dose for beam
+            % Calculate dose for beam by executing CalculateBeamTime()
             handles.calcs{i} = CalculateBeamTime('k', handles.k, 'angle', ...
                 handles.beams{i}.angle, 'r', handles.beams{i}.equivsquare, ...
                 'dose', handles.points{calcpt}.dose * ...
@@ -681,64 +751,125 @@ if iscell(name) || sum(name ~= 0)
                 'depth', handles.beams{i}.edepth(calcpt), 'oad', ...
                 handles.beams{i}.oad(isopt));
             
-            % Set calculated fields
+            % Set TPR
             beams{14,1+i} = sprintf('%0.4f', handles.calcs{i}.tpr);
+            
+            % Set Scp
             beams{15,1+i} = sprintf('%0.4f', handles.calcs{i}.scp);
+            
+            % Set OAR
             beams{16,1+i} = sprintf('%0.4f', handles.calcs{i}.oar);
+            
+            % Set couch factor
             beams{17,1+i} = sprintf('%0.4f', handles.calcs{i}.cf);
+            
+            % Set calculated beam time, in sec
             beams{18,1+i} = sprintf('%0.2f sec', handles.calcs{i}.time);
+            
+            % Calculate and set percent difference from planned time
             beams{20,1+i} = sprintf('%0.2f%%', 100*(handles.calcs{i}.time - ...
                 handles.beams{i}.plantime)/handles.beams{i}.plantime);
             
-            % Calculate decay-corrected time
+            %% Calculate decay-corrected time
+            % If beam angle is within the range delivered by head 1
             if (handles.beams{i}.angle >= 30 && ...
                     handles.beams{i}.angle < 150)
+                
+                % Use head 1's calibrated strength and date
                 s = ss(1);
                 d = sds(1);
+                
+            % Otherwise, if angle is within the range delivered by head 2
             elseif (handles.beams{i}.angle >= 150 && ...
                     handles.beams{i}.angle < 270)
+                
+                % Use head 2's calibrated strength and date
                 s = ss(2);
                 d = sds(2);
+                
+            % Otherwise, use head 3's calibrated strength and date
             else
                 s = ss(3);
                 d = sds(3);
             end
+            
+            % Calculate and correct the calculated time for source decay
             beams{19,1+i} = sprintf('%0.2f sec', handles.calcs{i}.time * ...
                 handles.k / s * 1 / exp(-log(2) / handles.halflife * ...
                 (now() - d)));
+        
+        % Otherwise, inputs are not valid
         else
+            
+            % Log warning
             Event(sprintf(['Secondary dose calculation inputs are not ', ...
                 'valid for beam %i'], i), 'WARN');
+            
+            % Set empty calculation cells
+            beams{14,1+i} = '';
+            beams{15,1+i} = '';
+            beams{16,1+i} = '';
+            beams{17,1+i} = '';
+            beams{18,1+i} = '';
+            beams{20,1+i} = '';
         end
     end
+    
+    % Update the beams table with the updated data
     set(handles.beam_table, 'Data', beams);
     
-    % Calculate weighted mean difference
+    %% Calculate weighted mean difference of calculated beams
+    % Initialize weighted sum and sum variables
     ws = 0;
     s = 0;
+    
+    % Loop through each beam
     for i = 2:size(beams,2)
-        s = s + str2double(strrep(beams{8,i},'%',''));
-        ws = ws + str2double(strrep(beams{8,i},'%','')) * ...
-            str2double(strrep(beams{20,i},'%',''));
+        
+        % If a difference was calculated
+        if ~isempty(beams{20,i})
+            
+            % Add beam to the sum and weighted sum
+            s = s + str2double(strrep(beams{8,i},'%',''));
+            ws = ws + str2double(strrep(beams{8,i},'%','')) * ...
+                str2double(strrep(beams{20,i},'%',''));
+        end
     end
+    
+    % Compute the weighted average
     handles.meandiff = ws / s;
     
-    % Update difference field on UI
+    % Disable the difference field (to change background color)
     set(handles.difference, 'Enable', 'off');
+    
+    % If the weighted difference is less than 5%
     if abs(handles.meandiff) < 5
+        
+        % Set the background color to be green
         set(handles.difference, 'BackgroundColor', [0.8 1 0.8]);
+        
+    % Otherwise, if the difference is less than 10% 
     elseif abs(handles.meandiff) < 10
+        
+        % Set the background to yellow
         set(handles.difference, 'BackgroundColor', [1 1 0.8]);
+    
+    % Otherwise, set the background to red
     else
         set(handles.difference, 'BackgroundColor', [1 0.8 0.8]);
     end
+    
+    % Re-enable the field
     set(handles.difference, 'Enable', 'on');
+    
+    % Update the value with the weighted difference
     set(handles.difference, 'String', sprintf('%0.2f%%', handles.meandiff));
     
-    % Log result
+    % Log the result
     Event(['Weighted mean calculation difference computed as ', ...
         sprintf('%0.2f%%', handles.meandiff)]);
     
+    % Log completion
     Event(sprintf(['Report calculations completed successfully in %0.3f ', ...
         'seconds'], toc));
 end
@@ -801,14 +932,24 @@ function patient_table_CellEditCallback(hObject, eventdata, handles)
 %       value for Data
 % handles    structure with handles and user data (see GUIDATA)
 
+% If a cell was edited
 if ~isempty(eventdata.NewData)
+    
+    % Retrieve table contents
     data = get(hObject, 'Data');
+    
+    % Revert the edited cell to the previous value
     data{eventdata.Indices(1), eventdata.Indices(2)} = ...
         eventdata.PreviousData;
+    
+    % Update the table contents
     set(hObject, 'Data', data);
     
+    % Log warning
     Event(['Patient data cannot be edited at this time. Use Browse to ', ...
         'load a plan report'], 'WARN');
+    
+    % Clear temporary variable
     clear data;
 end
     
@@ -828,14 +969,24 @@ function machine_table_CellEditCallback(hObject, eventdata, handles)
 %       value for Data
 % handles    structure with handles and user data (see GUIDATA)
 
+% If a cell was edited
 if ~isempty(eventdata.NewData)
+    
+    % Retrieve table contents
     data = get(hObject, 'Data');
+    
+    % Revert the edited cell to the previous value
     data{eventdata.Indices(1), eventdata.Indices(2)} = ...
         eventdata.PreviousData;
+    
+    % Update the table contents
     set(hObject, 'Data', data);
     
+    % Log warning
     Event(['Machine data cannot be edited at this time. Use Browse to ', ...
         'load a plan report'], 'WARN');
+    
+    % Clear temporary variable
     clear data;
 end
     
@@ -855,14 +1006,24 @@ function cal_table_CellEditCallback(hObject, eventdata, handles)
 %       value for Data
 % handles    structure with handles and user data (see GUIDATA)
 
+% If a cell was edited
 if ~isempty(eventdata.NewData)
+    
+    % Retrieve table contents
     data = get(hObject, 'Data');
+    
+    % Revert the edited cell to the previous value
     data{eventdata.Indices(1), eventdata.Indices(2)} = ...
         eventdata.PreviousData;
+    
+    % Update the table contents
     set(hObject, 'Data', data);
     
+    % Log warning
     Event(['Calibration data cannot be edited at this time. Use Browse to ', ...
         'load a plan report'], 'WARN');
+    
+    % Clear temporary variable
     clear data;
 end
     
@@ -882,39 +1043,26 @@ function beam_table_CellEditCallback(hObject, eventdata, handles)
 %       value for Data
 % handles    structure with handles and user data (see GUIDATA)
 
+% If a cell was edited
 if ~isempty(eventdata.NewData)
+    
+    % Retrieve table contents
     data = get(hObject, 'Data');
+    
+    % Revert the edited cell to the previous value
     data{eventdata.Indices(1), eventdata.Indices(2)} = ...
         eventdata.PreviousData;
+    
+    % Update the table contents
     set(hObject, 'Data', data);
     
+    % Log warning
     Event(['Beam data cannot be edited at this time. Use Browse to ', ...
         'load a plan report'], 'WARN');
+    
+    % Clear temporary variable
     clear data;
 end
     
 % Update handles structure
 guidata(hObject, handles);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function difference_Callback(hObject, ~, handles)
-% hObject    handle to difference (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Revert to stored value
-set(hObject, 'String', sprintf('%0.2f%%', handles.meandiff));
-
-% Update handles structure
-guidata(hObject, handles);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function difference_CreateFcn(hObject, ~, ~)
-% hObject    handle to difference (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-if ispc && isequal(get(hObject,'BackgroundColor'), ...
-        get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
