@@ -84,10 +84,15 @@ else
 end
 clear s cmdout;
 
+% Clip report if it is too long
+report = get(data.report, 'String');
+if length(report) > 80
+    report = sprintf('%s\n%s', report(1:80), report(81:end));
+end
+
 % Set report date/time, username, and version
 set(handles.text12, 'String', sprintf('%s\n\n%s\n\n%s (%s)\n\n%s', ...
-    datestr(now), user, data.version, data.versionInfo{6}, ...
-    get(data.report, 'String')));
+    datestr(now), user, data.version, data.versionInfo{6}, report));
 
 % Set patient information
 table = get(data.patient_table, 'Data');
