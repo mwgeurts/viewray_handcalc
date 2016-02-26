@@ -6,7 +6,7 @@ by Mark Geurts <mark.w.geurts@gmail.com>
 
 ## Description
 
-The ViewRay Secondary Dose Check loads a fixed conformal plan report from the ViewRay&trade; Treatment Planning System and recomputes the beam on time for each field to deliver the prescribed dose using a two-dimensional (2D) dose formalism. See [Computational Methods](../../wiki/Computational-Methods) on the wiki for details on the algorithm applied. 
+The ViewRay Secondary Dose Calculation Tool loads a fixed conformal plan report from the ViewRay&trade; Treatment Planning System and recomputes the beam on time for each field to deliver the prescribed dose using a two-dimensional (2D) dose formalism. See [Computational Methods](../../wiki/Computational-Methods) on the wiki for details on the algorithm applied. 
 
 ## Installation
 
