@@ -417,16 +417,20 @@ for i = 10:length(content)
                 [tokens,~] = regexp(tline(24:end), ['''([^'']+)''[^'']+''', ...
                     '([^'']+)''[^'']+''([^'']+)''[^'']+'], 'tokens', ...
                     'match');
-                beams{idx+1}.weightpt = tokens{1}{1};
-                beams{idx+2}.weightpt = tokens{1}{2};
-                beams{idx+3}.weightpt = tokens{1}{3};
+                if ~isempty(tokens)
+                    beams{idx+1}.weightpt = tokens{1}{1};
+                    beams{idx+2}.weightpt = tokens{1}{2};
+                    beams{idx+3}.weightpt = tokens{1}{3};
+                end
             
             % Store weight percentages
             elseif length(tline) > 10 && strcmp(tline(1:10), 'Beam Dose:')
                 fields = strsplit(tline, 'Beam Dose:');
                 for k = 2:length(fields)
                     tokens = textscan(fields{k}, '%f Gy / %f%%');
-                    beams{idx+k-1}.weight = tokens{2};
+                    if ~isempty(tokens)
+                        beams{idx+k-1}.weight = tokens{2};
+                    end
                 end
                 
             % Store SSDs
