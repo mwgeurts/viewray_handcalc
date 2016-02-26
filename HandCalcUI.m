@@ -22,7 +22,7 @@ function varargout = HandCalcUI(varargin)
 
 % Edit the above text to modify the response to help HandCalcUI
 
-% Last Modified by GUIDE v2.5 24-Feb-2016 16:30:45
+% Last Modified by GUIDE v2.5 25-Feb-2016 21:33:02
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -234,7 +234,7 @@ Event('Print button selected');
 PrintReport('Data', handles);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function clear_button_Callback(hObject, eventdata, handles)
+function clear_button_Callback(hObject, ~, handles)
 % hObject    handle to clear_button (see GCBO)
 % eventdata  reserved - to be defined in a future version_text of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -268,12 +268,19 @@ set(handles.beam_table, 'Data', data);
 % Clear report
 set(handles.report, 'String', '');
 
+% Clear difference
+set(handles.difference, 'Enable', 'off');
+set(handles.difference, 'BackgroundColor', [1 1 1]);
+set(handles.difference, 'Enable', 'on');
+set(handles.difference, 'String', '');
+
 % Clear internal variables
 handles.patient = struct;
 handles.machine = struct;
 handles.beams = cell(0);
 handles.points = cell(0);
 handles.calcs = cell(0);
+handles.meandiff = [];
 
 % Clear temporary variable
 clear data
@@ -444,15 +451,18 @@ if iscell(name) || sum(name ~= 0)
     data = get(handles.beam_table, 'Data');
     for i = 1:length(handles.beams)
         
-        % Initialize point indices
-        isopt = 0;
-        calcpt = 0;
+        % Initialize point indices (default to first point)
+        isopt = 1;
+        calcpt = 1;
         
         % Get the calc point index
-        for j = 1:length(handles.points)
-            if strcmp(handles.beams{i}.weightpt, handles.points{j}.name)
-                calcpt = j;
-                break;
+        if isfield(handles.beams{i}, 'weightpt') && ...
+                isempty(handles.beams{i}.weightpt)
+            for j = 1:length(handles.points)
+                if strcmp(handles.beams{i}.weightpt, handles.points{j}.name)
+                    calcpt = j;
+                    break;
+                end
             end
         end
         
@@ -467,7 +477,7 @@ if iscell(name) || sum(name ~= 0)
         % Get the calc point dose, if not set
         if ~isfield(handles.points{calcpt}, 'dose')
             handles.points{calcpt}.dose = str2double(inputdlg(sprintf(...
-            'Enter the total dose to point %s in Gy', ...
+            'Enter the total dose to %s in Gy', ...
             handles.points{calcpt}.name)));
         end
         
@@ -475,7 +485,7 @@ if iscell(name) || sum(name ~= 0)
         if ~isfield(handles.beams{i}, 'weight') || ...
                 isempty(handles.beams{i}.weight)
             handles.beams{i}.weight = str2double(inputdlg(sprintf(...
-            'Enter the weight of beam %i to calc point %s as a percent', ...
+            'Enter the weight of beam %i to %s as a percent', ...
             i, handles.points{calcpt}.name)));
         end
         
@@ -485,7 +495,7 @@ if iscell(name) || sum(name ~= 0)
         data{3,1+i} = strrep(handles.beams{i}.type, ' Conformal', '');
         data{4,1+i} = handles.beams{i}.iso;
         data{5,1+i} = sprintf('%0.2f cm', handles.beams{i}.equivsquare);
-        data{6,1+i} = handles.beams{i}.weightpt;
+        data{6,1+i} = handles.points{calcpt}.name;
         data{7,1+i} = sprintf('%0.3f Gy', handles.points{calcpt}.dose);
         data{8,1+i} = sprintf('%0.2f%%', handles.beams{i}.weight);
         data{9,1+i} = sprintf('%0.2f cm', handles.beams{i}.ssd(calcpt));
@@ -551,6 +561,32 @@ if iscell(name) || sum(name ~= 0)
         end
     end
     set(handles.beam_table, 'Data', beams);
+    
+    % Calculate weighted mean difference
+    ws = 0;
+    s = 0;
+    for i = 2:size(beams,2)
+        s = s + str2double(strrep(beams{8,i},'%',''));
+        ws = ws + str2double(strrep(beams{8,i},'%','')) * ...
+            str2double(strrep(beams{20,i},'%',''));
+    end
+    handles.meandiff = ws / s;
+    
+    % Update difference field on UI
+    set(handles.difference, 'Enable', 'off');
+    if abs(handles.meandiff) < 5
+        set(handles.difference, 'BackgroundColor', [0.8 1 0.8]);
+    elseif abs(handles.meandiff) < 10
+        set(handles.difference, 'BackgroundColor', [1 1 0.8]);
+    else
+        set(handles.difference, 'BackgroundColor', [1 0.8 0.8]);
+    end
+    set(handles.difference, 'Enable', 'on');
+    set(handles.difference, 'String', sprintf('%0.2f%%', handles.meandiff));
+    
+    % Log result
+    Event(['Weighted mean calculation difference computed as ', ...
+        sprintf('%0.2f%%', handles.meandiff)]);
     
     Event(sprintf(['Report calculations completed successfully in %0.3f ', ...
         'seconds'], toc));
@@ -708,3 +744,26 @@ end
     
 % Update handles structure
 guidata(hObject, handles);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function difference_Callback(hObject, ~, handles)
+% hObject    handle to difference (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Revert to stored value
+set(hObject, 'String', sprintf('%0.2f%%', handles.meandiff));
+
+% Update handles structure
+guidata(hObject, handles);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function difference_CreateFcn(hObject, ~, ~)
+% hObject    handle to difference (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+if ispc && isequal(get(hObject,'BackgroundColor'), ...
+        get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
