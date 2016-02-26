@@ -257,6 +257,11 @@ for i = 1:length(content{8})
     elseif length(tline) > 9 && strcmp(tline(1:9), 'Vertical:')
         points{idx}.couch(3) = str2double(tline(10:end));
         
+        % Store first isocenter point under patient couch field
+        if ~isfield(patient, 'couch') || isempty(patient.couch)
+            patient.couch = points{idx}.couch;
+        end
+        
     % Store point
     else
         
