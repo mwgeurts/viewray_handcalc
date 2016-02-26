@@ -55,7 +55,7 @@ function HandCalcUI_OpeningFcn(hObject, ~, handles, varargin)
 % Choose default command line output for HandCalcUI
 handles.output = hObject;
 
-% Declare planning source strength, in Gy/min
+% Declare default planning source strength, in Gy/min
 handles.k = 1.85; 
 
 % Declare default machine name and serial number
@@ -457,7 +457,7 @@ if iscell(name) || sum(name ~= 0)
         
         % Get the calc point index
         if isfield(handles.beams{i}, 'weightpt') && ...
-                isempty(handles.beams{i}.weightpt)
+                ~isempty(handles.beams{i}.weightpt)
             for j = 1:length(handles.points)
                 if strcmp(handles.beams{i}.weightpt, handles.points{j}.name)
                     calcpt = j;
