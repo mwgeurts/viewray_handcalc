@@ -159,7 +159,7 @@ while ischar(tline)
             'Prescription Dose Per Fraction')
         [tokens,~] = regexp(tline, '([0-9\.]+) Gy', 'tokens', 'match');
         if ~isempty(tokens)
-            patient.fractions = str2double(tokens{1}{1}) / patient.rxdose;
+            patient.fractions = patient.rxdose / str2double(tokens{1}{1});
         end
     
      % Store patient position acronym
