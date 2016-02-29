@@ -1,4 +1,7 @@
 function calc = CalculateBeamTime(varargin)
+% CalculateBeamTime calculates the treatment time to deliver a given dose
+% provided 
+
 
 % Define scalar factors
 calc.sad = 105; % cm
@@ -11,7 +14,6 @@ calc.tpr_data = csvread('./calcdata/ViewRay_TPR.csv');
 calc.scp_data = csvread('./calcdata/ViewRay_Scp.csv');
 
 % Initialize provided factors
-calc.mode = 'Planned';
 calc.dose = 0;
 calc.r = 0;
 calc.depth = 0;
@@ -41,6 +43,15 @@ for i = 1:2:nargin
     
     elseif strcmp(varargin{i}, 'k')
         calc.k = varargin{i+1}; 
+        
+    elseif strcmp(varargin{i}, 'cf')
+        calc.cf = varargin{i+1}; 
+            
+    elseif strcmp(varargin{i}, 'sad')
+        calc.sad = varargin{i+1}; 
+        
+    elseif strcmp(varargin{i}, 'scd')
+        calc.scd = varargin{i+1}; 
     end
 end
 
