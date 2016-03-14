@@ -1,6 +1,52 @@
 function [patient, machine, points, beams] = ParsePlanReportText(varargin)
-
-
+% ParsePlanReportText scans a ViewRay text plan report and extracts data
+% such as patient, machine, points, and beam parameters into an array of
+% structures.
+%
+% This function has been tested with text reports from versions 3.5, 3.6, 
+% and 4.0 of the ViewRay treatment system. For more information, see the
+% Software Compatibilty wiki page for this project.
+%
+% The following variables are required for proper execution: 
+%   varargin: string or cell array of strings containing the file name. If
+%       provided as a cell array, the fullfile() command is used to
+%       concatenate the strings into a single path
+%
+% The following variables are returned upon successful completion:
+%   patient: structure of patient information containing the following
+%       fields (note that fields will not be returned if the corresponding 
+%       field is not found in the plan report): id, name, birthdate,
+%       diagnosis, prescription, plan, planid, lastmodified, rxvolume,
+%       rxdose, rxpercent, fractions, position, couch, densitycy, and
+%       densityoverrides (name and density)
+%   machine: structure of machine information containing the following
+%       fields (note that fields will not be returned if the corresponding 
+%       field is not found in the plan report): name, serial, version,
+%       model, institution, department, and timespec
+%   points: a cell array of structures for each point in the plan, 
+%       containing the following fields (note that fields will not be 
+%       returned if the corresponding field is not found in the plan 
+%       report): name, coordinates
+%   beams: a cell array of structures for each beam in the plan, containing 
+%       the following fields (note that fields will not be returned if the 
+%       corresponding field is not found in the plan report): angle, group, 
+%       iso, ssd, depth, edepth, oad, plantime, type, and equivsquare
+%
+% Author: Mark Geurts, mark.w.geurts@gmail.com
+% Copyright (C) 2016 University of Wisconsin Board of Regents
+%
+% This program is free software: you can redistribute it and/or modify it 
+% under the terms of the GNU General Public License as published by the  
+% Free Software Foundation, either version 3 of the License, or (at your 
+% option) any later version.
+%
+% This program is distributed in the hope that it will be useful, but 
+% WITHOUT ANY WARRANTY; without even the implied warranty of 
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General 
+% Public License for more details.
+% 
+% You should have received a copy of the GNU General Public License along 
+% with this program. If not, see http://www.gnu.org/licenses/.
 
 % Initialize return variables
 patient = struct;
@@ -368,3 +414,6 @@ if ~isempty(beams)
             length(beams), toc));
     end
 end
+
+% Clear temporary variables
+clear fid fields file group i iso subfields tline tokens;

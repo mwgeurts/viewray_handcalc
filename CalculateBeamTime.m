@@ -227,3 +227,5 @@ if exist('Event', 'file') == 2
         calc.time));
 end
 
+% Clear temporary variables
+clear x y i;

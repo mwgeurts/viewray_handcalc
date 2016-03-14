@@ -1,6 +1,59 @@
 function [patient, machine, points, beams] = ParsePlanReportPDF(varargin)
-
-
+% ParsePlanReportPDF scans a ViewRay PDF plan report and extracts data
+% such as patient, machine, points, and beam parameters into an array of
+% structures. This function uses the xpdf_tools submodule to extract the
+% PDF text into a MATLAB structure, then searches through the content and
+% identifies which values to store.
+%
+% This function has been tested with plan reports from versions 3.5, 3.6, 
+% and 4.0 of the ViewRay treatment system. For more information, see the
+% Software Compatibilty wiki page for this project.
+%
+% The following variables are required for proper execution: 
+%   varargin: string or cell array of strings containing the file name. If
+%       provided as a cell array, the fullfile() command is used to
+%       concatenate the strings into a single path
+%
+% The following variables are returned upon successful completion:
+%   patient: structure of patient information containing the following
+%       fields (note that fields will not be returned if the corresponding 
+%       field is not found in the plan report): name, plan, lastmodified, 
+%       id, mrn, birthdate, rxapproval, rxapprovaldate, contourapproval, 
+%       contourapprovaldate, imageapproval, imageapprovaldate, 
+%       planapproval, planapprovaldate, coil, autonormalize, resolution, 
+%       deform, deliverytime, position, diagnosis, rxvolume, rxdose, 
+%       rxpercent, fractions, doseperfx, prevdose, couch, densityct,
+%       and densityoverrides (name, template, and density)
+%   machine: structure of machine information containing the following
+%       fields (note that fields will not be returned if the corresponding 
+%       field is not found in the plan report): institution, version,
+%       isotope, model, calibration (activity, activitydate, strength, and 
+%       strengthdate), and planning (activity and strength)
+%   points: a cell array of structures for each point in the plan, 
+%       containing the following fields (note that fields will not be 
+%       returned if the corresponding field is not found in the plan 
+%       report): name, coordinates, dose, beams, and couch (coordinates)
+%   beams: a cell array of structures for each beam in the plan, containing 
+%       the following fields (note that fields will not be returned if the 
+%       corresponding field is not found in the plan report): angle, group, 
+%       ssd, depth, edepth, oad, type, plantime, iso, equivsquare, 
+%       weightpt, and weight
+%
+% Author: Mark Geurts, mark.w.geurts@gmail.com
+% Copyright (C) 2016 University of Wisconsin Board of Regents
+%
+% This program is free software: you can redistribute it and/or modify it 
+% under the terms of the GNU General Public License as published by the  
+% Free Software Foundation, either version 3 of the License, or (at your 
+% option) any later version.
+%
+% This program is distributed in the hope that it will be useful, but 
+% WITHOUT ANY WARRANTY; without even the implied warranty of 
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General 
+% Public License for more details.
+% 
+% You should have received a copy of the GNU General Public License along 
+% with this program. If not, see http://www.gnu.org/licenses/.
 
 % Initialize return variables
 patient = struct;
@@ -42,7 +95,7 @@ end
 % Read PDF text contents
 content = XpdfText(file);
 
-% Concatenate all pages
+% Concatenate all pages (currently disabled)
 % content = cat(2,content{:});
 
 % Loop through first page
@@ -540,3 +593,6 @@ if ~isempty(beams)
             length(beams), toc));
     end
 end
+
+% Clear temporary variables
+clear content fields file group i idx j k lateral tline tokens;
