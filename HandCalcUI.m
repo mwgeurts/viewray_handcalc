@@ -71,15 +71,15 @@ handles.output = hObject;
 handles.k = 1.85; 
 
 %% Global variables
+% Set version_text handle
+handles.version = '0.9';
+
 % Declare default machine name and serial number
 handles.defaultmachine = 'ViewRay MRIdian';
 handles.defaultserial = '101';
 
 % Declare Co-60 half life, in days
 handles.halflife = 1925.2;
-
-% Set version_text handle
-handles.version = '0.9';
 
 %% Prepare path, logs
 % Determine path of current application
