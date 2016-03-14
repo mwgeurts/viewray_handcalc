@@ -148,34 +148,44 @@ for i = 1:length(content{1})
             'Prescription Approved By')
         fields = strsplit(tline(25:end), ',');
         patient.rxapproval = strtrim(fields{1}); 
-        patient.rxapprovaldate = datenum(strtrim(fields{2})); 
+        if length(fields) > 1
+            patient.rxapprovaldate = datenum(strtrim(fields{2})); 
+        end
     
     % Store contour approval
     elseif length(tline) > 22 && strcmp(tline(1:22), ...
             'Contouring Approved By')
         fields = strsplit(tline(23:end), ',');
         patient.contourapproval = strtrim(fields{1}); 
-        patient.contourapprovaldate = datenum(strtrim(fields{2})); 
+        if length(fields) > 1
+            patient.contourapprovaldate = datenum(strtrim(fields{2})); 
+        end
     
     % Store contour approval
     elseif length(tline) > 30 && strcmp(tline(1:30), ...
             'Image Registration Approved By')
         fields = strsplit(tline(31:end), ',');
         patient.imageapproval = strtrim(fields{1}); 
-        patient.imageapprovaldate = datenum(strtrim(fields{2})); 
+        if length(fields) > 1
+            patient.imageapprovaldate = datenum(strtrim(fields{2})); 
+        end
         
     % Store plan approval
     elseif length(tline) > 16 && strcmp(tline(1:16), 'Plan Approved By')
         fields = strsplit(tline(17:end), ',');
         patient.planapproval = strtrim(fields{1}); 
-        patient.planapprovaldate = datenum(strtrim(fields{2})); 
+        if length(fields) > 1
+            patient.planapprovaldate = datenum(strtrim(fields{2})); 
+        end
         
     % Store calendar approval
     elseif length(tline) > 29 && strcmp(tline(1:29), ...
             'Delivery Calendar Approved By')
         fields = strsplit(tline(30:end), ',');
         patient.imageapproval = strtrim(fields{1}); 
-        patient.imageapprovaldate = datenum(strtrim(fields{2})); 
+        if length(fields) > 1
+            patient.imageapprovaldate = datenum(strtrim(fields{2})); 
+        end
         
     % Store dose model
     elseif length(tline) > 10 && strcmp(tline(1:10), 'Dose Model')
