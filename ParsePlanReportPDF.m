@@ -36,8 +36,8 @@ function [patient, machine, points, beams] = ParsePlanReportPDF(varargin)
 %   beams: a cell array of structures for each beam in the plan, containing 
 %       the following fields (note that fields will not be returned if the 
 %       corresponding field is not found in the plan report): angle, group, 
-%       ssd, depth, edepth, oad, type, plantime, iso, equivsquare, 
-%       weightpt, and weight
+%       ssd, depth, edepth, oad, type, segments, plantime, iso, 
+%       equivsquare, weightpt, and weight
 %
 % Author: Mark Geurts, mark.w.geurts@gmail.com
 % Copyright (C) 2016 University of Wisconsin Board of Regents
@@ -438,13 +438,25 @@ for i = 10:length(content)
             % Store beam types
             elseif length(tline) > 9 && strcmp(tline(1:9), 'Beam Type')
                 [tokens,~] = regexp(tline(10:end), ...
-                    ['(Fixed Conformal|Optimized Conformal|IMRT) ', ...
-                    '(Fixed Conformal|Optimized Conformal|IMRT) ', ...
-                    '(Fixed Conformal|Optimized Conformal|IMRT)'], ...
+                    ['(Fixed Conformal|Optimized Conformal|IMRT) (\([^\)]+\) )?', ...
+                    '(Fixed Conformal|Optimized Conformal|IMRT) (\([^\)]+\) )?', ...
+                    '(Fixed Conformal|Optimized Conformal|IMRT) (\([^\)]+\))?'], ...
                     'tokens', 'match');
-                beams{idx+1}.type = tokens{1}{1};
-                beams{idx+2}.type = tokens{1}{2};
-                beams{idx+3}.type = tokens{1}{3};
+                if length(tokens{1}) == 3
+                    beams{idx+1}.type = tokens{1}{1};
+                    beams{idx+2}.type = tokens{1}{2};
+                    beams{idx+3}.type = tokens{1}{3};
+                elseif length(tokens{1}) == 6
+                    beams{idx+1}.type = tokens{1}{1};
+                    beams{idx+1}.segments = ...
+                        cell2mat(textscan(tokens{1}{2}, '(%f segments)'));
+                    beams{idx+2}.type = tokens{1}{3};
+                    beams{idx+2}.segments = ...
+                        cell2mat(textscan(tokens{1}{4}, '(%f segments)'));
+                    beams{idx+3}.type = tokens{1}{5};
+                    beams{idx+3}.segments = ...
+                        cell2mat(textscan(tokens{1}{6}, '(%f segments)'));
+                end
             
             % Store beam on times
             elseif length(tline) > 21 && strcmp(tline(1:21), ...
