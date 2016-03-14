@@ -670,6 +670,13 @@ if iscell(name) || sum(name ~= 0)
                 handles.points{calcpt}.name)));
         end
         
+        % Make sure the dose entry is valid
+        if isempty(handles.points{calcpt}.dose) || ...
+                isnan(handles.points{calcpt}.dose) || ...
+                handles.points{calcpt}.dose <= 0
+            Event('A valid total dose is required to continue', 'ERROR');
+        end
+        
         % If the weight percentage for this beam is not set
         if ~isfield(handles.beams{i}, 'weight') || ...
                 isempty(handles.beams{i}.weight)
@@ -678,6 +685,30 @@ if iscell(name) || sum(name ~= 0)
             handles.beams{i}.weight = str2double(inputdlg(sprintf(...
                 'Enter the weight of beam %i to %s as a percent', ...
                 i, handles.points{calcpt}.name)));
+        end
+        
+        % Make sure the weight entry is valid
+        if isempty(handles.beams{i}.weight) || ...
+                isnan(handles.beams{i}.weight) || ...
+                handles.beams{i}.weight <= 0
+            Event('A valid beam weight is required to continue', 'ERROR');
+        end
+        
+        % If the equivalent square field size is not set
+        if ~isfield(handles.beams{i}, 'equivsquare') || ...
+                isempty(handles.beams{i}.equivsquare)
+            
+            % Prompt the user to enter the field size
+            handles.beams{i}.equivsquare = str2double(inputdlg(sprintf(...
+                'Enter the equivalent square field size of beam %i in cm', ...
+                i)));
+        end
+        
+        % Make sure the field size is valid
+        if isempty(handles.beams{i}.equivsquare) || ...
+                isnan(handles.beams{i}.equivsquare) || ...
+                handles.beams{i}.equivsquare <= 0
+            Event('A valid field size is required to continue', 'ERROR');
         end
         
         % Update beam angles
