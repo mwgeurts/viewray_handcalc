@@ -35,7 +35,7 @@ function varargout = HandCalcUI(varargin)
 % You should have received a copy of the GNU General Public License along 
 % with this program. If not, see http://www.gnu.org/licenses/.
 
-% Last Modified by GUIDE v2.5 25-Feb-2016 21:33:02
+% Last Modified by GUIDE v2.5 14-Mar-2016 17:05:45
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -191,7 +191,8 @@ report = dir(['./', handles.sourcefolder,'*.pdf']);
 
 % If too many files were found, pick first one
 if length(report) > 1
-    Event('Multiple files were found in source calibration folder', 'WARN');
+    Event(['Multiple files were found in source calibration folder, ', ...
+        'choosing the first one'], 'WARN');
     report = report(1);
 end
 
@@ -220,12 +221,13 @@ if ~isempty(report)
     set(handles.cal_table, 'Data', data);
     
     % Clear temporary variable
-    clear data;
+    clear data report;
 
 % Otherwise no calibration data was found
 else
     Event(['No source calibration reports were found in ', ...
-        handles.sourcefolder], 'ERROR');
+        handles.sourcefolder, '. Decay correction will be disabled unless', ...
+        ' the plan report contains source strength data'], 'WARN');
 end
 
 
@@ -542,8 +544,16 @@ if iscell(name) || sum(name ~= 0)
         end
     end
     
-    % Update the planning strength using the global default value
-    data{6,2} = sprintf('%0.2f Gy/min', handles.k);
+    % Update the planning strength from the report, if it exists
+    if isfield(handles.machine, 'planning') && ...
+            isfield(handles.machine.planning, 'strength')
+        data{6,2} = sprintf('%0.2f Gy/min', ...
+            handles.machine.planning.strength);
+    
+    % Otherwise, use the global default value
+    else
+        data{6,2} = sprintf('%0.2f Gy/min', handles.k);
+    end
     
     % Set the machine table with the updated cells
     set(handles.machine_table, 'Data', data);
@@ -722,18 +732,26 @@ if iscell(name) || sum(name ~= 0)
     % Get the patient, beams, and calibration table data
     patient = get(handles.patient_table, 'Data');
     beams = get(handles.beam_table, 'Data');
+    machine = get(handles.machine_table, 'Data');
     cal = get(handles.cal_table, 'Data');
     
+    % Get planning source strength
+    k = cell2mat(textscan(machine{6,2}, '%f Gy/min'));
+    
     % Initialize source strengths and dates arrays
-    ss = zeros(1,size(cal,2));
-    sds = zeros(1,size(cal,2));
+    ss = zeros(1, size(cal,1));
+    sds = zeros(1, size(cal,1));
     
     % Loop through each head
     for i = 1:size(cal,2)
         
-        % Store the strength and date as numbers
-        ss(i) = cell2mat(textscan(cal{i,2}, '%f Gy/min'));
-        sds(i) = datenum(cal{i,3});
+        % If calibration data exists
+        if ~isempty(cal{i,2})
+            
+            % Store the strength and date as numbers
+            ss(i) = cell2mat(textscan(cal{i,2}, '%f Gy/min'));
+            sds(i) = datenum(cal{i,3});
+        end
     end
     
     % Loop through each beam
@@ -744,7 +762,7 @@ if iscell(name) || sum(name ~= 0)
         if ValidateCalcInputs(patient, beams, i)
             
             % Calculate dose for beam by executing CalculateBeamTime()
-            handles.calcs{i} = CalculateBeamTime('k', handles.k, 'angle', ...
+            handles.calcs{i} = CalculateBeamTime('k', k, 'angle', ...
                 handles.beams{i}.angle, 'r', handles.beams{i}.equivsquare, ...
                 'dose', handles.points{calcpt}.dose * ...
                 handles.beams{i}.weight / 100 / handles.patient.fractions, ...
@@ -795,10 +813,16 @@ if iscell(name) || sum(name ~= 0)
                 d = sds(3);
             end
             
-            % Calculate and correct the calculated time for source decay
-            beams{19,1+i} = sprintf('%0.2f sec', handles.calcs{i}.time * ...
-                handles.k / s * 1 / exp(-log(2) / handles.halflife * ...
-                (now() - d)));
+            % If a source strength and date exist
+            if s > 0 && d > 0
+                
+                % Calculate and correct the calculated time for decay
+                beams{19,1+i} = sprintf('%0.2f sec', handles.calcs{i}.time ...
+                    * handles.k / s * 1 / exp(-log(2) / handles.halflife * ...
+                    (now() - d)));
+            else
+                beams{19,1+i} = '';
+            end
         
         % Otherwise, inputs are not valid
         else
@@ -813,6 +837,7 @@ if iscell(name) || sum(name ~= 0)
             beams{16,1+i} = '';
             beams{17,1+i} = '';
             beams{18,1+i} = '';
+            beams{19,1+i} = '';
             beams{20,1+i} = '';
         end
     end
@@ -874,6 +899,10 @@ if iscell(name) || sum(name ~= 0)
     % Log completion
     Event(sprintf(['Report calculations completed successfully in %0.3f ', ...
         'seconds'], toc));
+    
+    % Clear temporary variables
+    clear beams cal calcpt d data defaultcalcpt i isopt j k machine name ...
+        path patient s sds ss ws;
 end
 
 % Update handles structure
