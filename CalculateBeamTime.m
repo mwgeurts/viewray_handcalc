@@ -5,6 +5,12 @@ function calc = CalculateBeamTime(varargin)
 % necessary calculation factors, such as Tissue-Phantom Ratios (TPR) and
 % output (Scp) tables are loaded upon execution.
 %
+% This function can also be called by passing a beams structure as an input
+% argument along with a dose. For information on the format of the beams
+% structure, see ParsePlanReportPDF() or ParsePlanReportText(). If the
+% beams structure contains multiple points, the isopt or calcpt inputs 
+% should also be included.
+%
 % Default values for Source to Axis Distance (SAD), Couch Factor (CF), and 
 % reference conditions (Source to Calibration Distance and K) are included
 % for the ViewRay treatment system. These values can be adjusted during
@@ -43,6 +49,11 @@ function calc = CalculateBeamTime(varargin)
 %   cf (optional): double containing the couch factor
 %   sad (optional): double containing the Source-Axis Distance in cm
 %   scd (optional): double containing the Source-Calibration Distance in cm
+%   beam (optional): structure containing depth, r, oad, angle, and sad
+%   calcpt (optional): integer containing the index of which point to
+%       calculate dose to, if a beam structure is provided
+%   isopt (optional): integer containing the index of which point to
+%       calculate off axis distance from, if a beam structure is provided
 %
 % The following structure fields are returned upon successful completion:
 %   calc.sad: double containing the Source-Axis Distance in cm
@@ -107,13 +118,33 @@ calc.depth = 0;
 calc.angle = 0;
 calc.oad = 0;
 
+% Initialize default indices for calcpt and isopt
+calcpt = 1;
+isopt = 1;
+
 % Load data structure from varargin
 for i = 1:2:nargin
     
     % Load dose
     if strcmp(varargin{i}, 'dose')
         calc.dose = varargin{i+1};  
-       
+    
+    % Load calcpt
+    elseif strcmp(varargin{i}, 'calcpt')
+        calcpt = varargin{i+1};  
+        
+    % Load isopt
+    elseif strcmp(varargin{i}, 'isopt')
+        isopt = varargin{i+1};  
+        
+    % Load beam structure
+    elseif strcmp(varargin{i}, 'beam') && isstruct(varargin{i+1})
+        calc.depth = varargin{i+1}.edepth(calcpt);
+        calc.r = varargin{i+1}.equivsquare;
+        calc.oad = varargin{i+1}.oad(isopt);
+        calc.angle = varargin{i+1}.angle;
+        calc.sad = varargin{i+1}.ssd(calcpt) + varargin{i+1}.depth(calcpt);
+        
     % Load depth
     elseif strcmp(varargin{i}, 'depth')
         calc.depth = varargin{i+1};  
@@ -228,4 +259,4 @@ if exist('Event', 'file') == 2
 end
 
 % Clear temporary variables
-clear x y i;
+clear x y i calcpt isopt;
