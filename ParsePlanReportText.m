@@ -407,6 +407,18 @@ end
 % Close file handle
 fclose(fid);
 
+% Remove empty beams
+for i = 1:length(beams)
+    
+    % If the planned beam time is empty, clear structure from cell
+    if beams{i}.plantime == 0
+        beams{i} = [];
+    end
+end
+
+% Remove empty cells
+beams = beams(~cellfun('isempty',beams)); 
+
 % Log completion and image size
 if ~isempty(beams)
     if exist('Event', 'file') == 2

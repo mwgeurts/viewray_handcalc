@@ -440,22 +440,24 @@ for i = 10:length(content)
                 [tokens,~] = regexp(tline(10:end), ...
                     ['(Fixed Conformal|Optimized Conformal|IMRT) (\([^\)]+\) )?', ...
                     '(Fixed Conformal|Optimized Conformal|IMRT) (\([^\)]+\) )?', ...
-                    '(Fixed Conformal|Optimized Conformal|IMRT) (\([^\)]+\))?'], ...
+                    '(Fixed Conformal|Optimized Conformal|IMRT)( \([^\)]+\))?'], ...
                     'tokens', 'match');
-                if length(tokens{1}) == 3
+                if length(tokens{1}) == 6
                     beams{idx+1}.type = tokens{1}{1};
-                    beams{idx+2}.type = tokens{1}{2};
-                    beams{idx+3}.type = tokens{1}{3};
-                elseif length(tokens{1}) == 6
-                    beams{idx+1}.type = tokens{1}{1};
-                    beams{idx+1}.segments = ...
-                        cell2mat(textscan(tokens{1}{2}, '(%f segments)'));
+                    if ~isempty(tokens{1}{2})
+                        beams{idx+1}.segments = ...
+                            cell2mat(textscan(tokens{1}{2}, '(%f segments)'));
+                    end
                     beams{idx+2}.type = tokens{1}{3};
-                    beams{idx+2}.segments = ...
-                        cell2mat(textscan(tokens{1}{4}, '(%f segments)'));
+                    if ~isempty(tokens{1}{4})
+                        beams{idx+1}.segments = ...
+                            cell2mat(textscan(tokens{1}{4}, '(%f segments)'));
+                    end
                     beams{idx+3}.type = tokens{1}{5};
-                    beams{idx+3}.segments = ...
-                        cell2mat(textscan(tokens{1}{6}, '(%f segments)'));
+                    if ~isempty(tokens{1}{6})
+                        beams{idx+1}.segments = ...
+                            cell2mat(textscan(tokens{1}{6}, '(%f segments)'));
+                    end
                 end
             
             % Store beam on times
@@ -607,6 +609,18 @@ for i = 10:length(content)
         end
     end
 end
+
+% Remove empty beams
+for i = 1:length(beams)
+    
+    % If the planned beam time is empty, clear structure from cell
+    if beams{i}.plantime == 0
+        beams{i} = [];
+    end
+end
+
+% Remove empty cells
+beams = beams(~cellfun('isempty',beams)); 
 
 % Log completion and image size
 if ~isempty(beams)
