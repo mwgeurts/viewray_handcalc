@@ -1,5 +1,5 @@
 <deployment-project plugin="plugin.apptool" plugin-version="1.0">
-  <configuration build-checksum="3086531585" file="/Users/mwgeurts/Documents/ViewRay/Independent Dose Calculator Project/viewray_handcalc/ViewRay Secondary Dose Calculation Tool.prj" location="/Users/mwgeurts/Documents/ViewRay/Independent Dose Calculator Project/viewray_handcalc" name="ViewRay Secondary Dose Calculation Tool" target="target.mlapps" target-name="Package App">
+  <configuration build-checksum="3069492894" file="/Users/mwgeurts/Documents/ViewRay/Independent Dose Calculator Project/viewray_handcalc/ViewRay Secondary Dose Calculation Tool.prj" location="/Users/mwgeurts/Documents/ViewRay/Independent Dose Calculator Project/viewray_handcalc" name="ViewRay Secondary Dose Calculation Tool" target="target.mlapps" target-name="Package App">
     <param.appname>ViewRay Secondary Dose Calculation Tool</param.appname>
     <param.authnamewatermark>Mark Geurts</param.authnamewatermark>
     <param.email>mark.w.geurts@gmail.com</param.email>
@@ -55,7 +55,10 @@
       <file>${PROJECT_ROOT}/xpdf_tools/XpdfWhich.m</file>
     </fileset.depfun>
     <fileset.resources>
+      <file>${PROJECT_ROOT}/README.md</file>
+      <file>${PROJECT_ROOT}/UWCrest_4c.png</file>
       <file>${PROJECT_ROOT}/calcdata</file>
+      <file>${PROJECT_ROOT}/license</file>
       <file>${PROJECT_ROOT}/sourcereport</file>
     </fileset.resources>
     <fileset.package />
