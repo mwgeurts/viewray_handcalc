@@ -17,7 +17,7 @@ function [patient, machine, points, beams] = ParsePlanReportText(varargin)
 %       fields (note that fields will not be returned if the corresponding 
 %       field is not found in the plan report): id, name, birthdate,
 %       diagnosis, prescription, plan, planid, lastmodified, rxvolume,
-%       rxdose, rxpercent, fractions, position, couch, densitycy, and
+%       rxdose, rxpercent, fractions, position, couch, densityct, and
 %       densityoverrides (name and density)
 %   machine: structure of machine information containing the following
 %       fields (note that fields will not be returned if the corresponding 

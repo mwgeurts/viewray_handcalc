@@ -20,10 +20,11 @@ function [patient, machine, points, beams] = ParsePlanReportPDF(varargin)
 %       field is not found in the plan report): name, plan, lastmodified, 
 %       id, mrn, birthdate, rxapproval, rxapprovaldate, contourapproval, 
 %       contourapprovaldate, imageapproval, imageapprovaldate, 
-%       planapproval, planapprovaldate, coil, autonormalize, resolution, 
-%       deform, deliverytime, position, diagnosis, rxvolume, rxdose, 
-%       rxpercent, fractions, doseperfx, prevdose, couch, densityct,
-%       and densityoverrides (name, template, and density)
+%       planapproval, planapprovaldate, calendarapproval, 
+%       calendarapprovaldate, coil, autonormalize, interdigitation, 
+%       resolution, deform, deliverytime, position, diagnosis, rxvolume, 
+%       rxdose, rxpercent, fractions, doseperfx, prevdose, couch, 
+%       densityct, and densityoverrides (name, template, and density)
 %   machine: structure of machine information containing the following
 %       fields (note that fields will not be returned if the corresponding 
 %       field is not found in the plan report): institution, version,
@@ -182,9 +183,9 @@ for i = 1:length(content{1})
     elseif length(tline) > 29 && strcmp(tline(1:29), ...
             'Delivery Calendar Approved By')
         fields = strsplit(tline(30:end), ',');
-        patient.imageapproval = strtrim(fields{1}); 
+        patient.calendarapproval = strtrim(fields{1}); 
         if length(fields) > 1
-            patient.imageapprovaldate = datenum(strtrim(fields{2})); 
+            patient.calendarapprovaldate = datenum(strtrim(fields{2})); 
         end
         
     % Store dose model
@@ -203,7 +204,7 @@ for i = 1:length(content{1})
     % Store interdigitation
     elseif length(tline) > 21 && strcmp(tline(1:21), ...
             'Allow Interdigitation')
-        patient.autonormalize = strtrim(tline(22:end));   
+        patient.interdigitation = strtrim(tline(22:end));   
     
     % Store resolution
     elseif length(tline) > 25 && strcmp(tline(1:25), ...

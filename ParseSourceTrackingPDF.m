@@ -85,7 +85,7 @@ for i = 1:length(content{1})
     % Store line, remove duplicate spaces
     tline = strtrim(regexprep(content{1}{i}, '[ ]+', ' '));
     
-    % Store system name
+    % Store system serial number
     if length(tline) > 7 && strcmp(tline(1:7), 'System:')
         fields = strsplit(tline(8:end), {'(', ')'});
         cal.system = strtrim(fields{1});
