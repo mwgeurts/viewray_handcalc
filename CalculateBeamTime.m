@@ -3,7 +3,8 @@ function calc = CalculateBeamTime(varargin)
 % using a two-dimensional SAD calculation. Input arguments such as depth,
 % field size, off axis distance, and beam angle can be provided. Other
 % necessary calculation factors, such as Tissue-Phantom Ratios (TPR) and
-% output (Scp) tables are loaded upon execution.
+% output (Scp) tables are loaded upon execution or can be provided as
+% inputs.
 %
 % This function can also be called by passing a beams structure as an input
 % argument along with a dose. For information on the format of the beams
@@ -49,6 +50,8 @@ function calc = CalculateBeamTime(varargin)
 %   cf (optional): double containing the couch factor
 %   sad (optional): double containing the Source-Axis Distance in cm
 %   scd (optional): double containing the Source-Calibration Distance in cm
+%   tpr_data (optional): 2D array of doubles containing the TPR table
+%   scp_data (optional): 2D array of doubles containing the Scp table
 %   beam (optional): structure containing depth, r, oad, angle, and sad
 %   calcpt (optional): integer containing the index of which point to
 %       calculate dose to, if a beam structure is provided
@@ -60,8 +63,6 @@ function calc = CalculateBeamTime(varargin)
 %   calc.scd: double containing the Source-Calibration Distance in cm
 %   calc.k: double containing the calibration factor in Gy/min
 %   calc.cf: double containing the Couch Factor
-%   calc.tpr_data: 2D array of doubles containing the TPR table
-%   calc.scp_data: 2D array of doubles containing the Scp table
 %   calc.dose: double containing the prescription dose in Gy
 %   calc.r: double containing the equivalent square field size in cm
 %   calc.depth: double containing the prescription depth in cm
@@ -101,15 +102,22 @@ function calc = CalculateBeamTime(varargin)
 % You should have received a copy of the GNU General Public License along 
 % with this program. If not, see http://www.gnu.org/licenses/.
 
-% Define scalar factors
+% Define persistent variables
+persistent tpr_data scp_data;
+
+% Define default scalar factors
 calc.sad = 105; % cm
 calc.scd = 100 + 5; % cm
 calc.k = 1.85; % Gy/min
 calc.cf = 1/1.21;
 
-% Load tabulated factors
-calc.tpr_data = csvread('./calcdata/ViewRay_TPR.csv');
-calc.scp_data = csvread('./calcdata/ViewRay_Scp.csv');
+% Load default tabulated factors
+if isempty(tpr_data)
+    tpr_data = csvread('./calcdata/ViewRay_TPR.csv');
+end
+if isempty(scp_data)
+    scp_data = csvread('./calcdata/ViewRay_Scp.csv');
+end
 
 % Initialize provided factors
 calc.dose = 0;
@@ -185,6 +193,14 @@ for i = 1:2:nargin
     % Load the SCD
     elseif strcmp(varargin{i}, 'scd')
         calc.scd = varargin{i+1}; 
+        
+    % Load the TPR data
+    elseif strcmp(varargin{i}, 'tpr_data')
+        tpr_data = varargin{i+1}; 
+        
+    % Load the Scp data
+    elseif strcmp(varargin{i}, 'scp_data')
+        scp_data = varargin{i+1}; 
     end
 end
 
@@ -215,15 +231,14 @@ if calc.angle > 240 || calc.angle < 130
 end
 
 % Calculate an interpolation mesh for the TPR data
-[x, y] = meshgrid(calc.tpr_data(2:end,1), calc.tpr_data(1,2:end));
+[x, y] = meshgrid(tpr_data(2:end,1), tpr_data(1,2:end));
 
 % Interpolate the TPR using linear interpolation
-calc.tpr = interp2(x, y, calc.tpr_data(2:end, 2:end)', calc.depth, ...
-    calc.r, 'linear', 0);
+calc.tpr = interp2(x, y, tpr_data(2:end, 2:end)', calc.depth, calc.r, ...
+    'linear', 0);
 
 % Interpolate the Scp using linear interpolation
-calc.scp = interp1(calc.scp_data(1,:), calc.scp_data(2,:), calc.r, ...
-    'linear', 0);
+calc.scp = interp1(scp_data(1,:), scp_data(2,:), calc.r, 'linear', 0);
 
 % If TPR or Scp are  zero, throw an exception
 if calc.tpr <= 0
