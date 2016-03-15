@@ -293,15 +293,28 @@ for i = 1:length(content{4})
         
     % Store prescription
     elseif ~isempty(tline) 
+        
+        % Search for volume prescription format
         fields = textscan(tline, '%f/%f/%f %f to %f%% %f %f %f');
         
-        % Scan for prescription line
+        % Store fields
         if ~isempty(fields{4})
             patient.rxdose = fields{4};
             patient.rxpercent = fields{5};
             patient.fractions = fields{6};
             patient.doseperfx = fields{7};
             patient.prevdose = fields{8};
+        end
+        
+        % Search for point prescription format
+        fields = textscan(tline, '%f/%f/%f %f %f %f %f');
+        
+        % Store fields
+        if ~isempty(fields{4})
+            patient.rxdose = fields{4};
+            patient.fractions = fields{5};
+            patient.doseperfx = fields{6};
+            patient.prevdose = fields{7};
         end
     end
 end

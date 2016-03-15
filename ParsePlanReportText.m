@@ -411,7 +411,7 @@ fclose(fid);
 for i = 1:length(beams)
     
     % If the planned beam time is empty, clear structure from cell
-    if beams{i}.plantime == 0
+    if ~isfield(beams{i}, 'plantime') || beams{i}.plantime == 0
         beams{i} = [];
     end
 end

@@ -429,22 +429,39 @@ if iscell(name) || sum(name ~= 0)
     % Update birthdate if present
     if isfield(handles.patient, 'birthdate')
         data{3,2} = datestr(handles.patient.birthdate, 'mm/dd/yyyy');
+    else
+        data{3,2} = '';
     end
     
     % Update diagnosis if present
     if isfield(handles.patient, 'diagnosis')
         data{4,2} = handles.patient.diagnosis;
+    else
+        data{4,2} = '';
     end
     
     % Update prescription if all fields are present
     if isfield(handles.patient, 'rxvolume') && ...
-            isfield(handles.patient, 'rxdose') && ...
-            isfield(handles.patient, 'rxpercent')
+            isfield(handles.patient, 'rxdose')
+            
+        % If this is a volume prescription
+        if isfield(handles.patient, 'rxpercent') && ...
+                ~isempty(handles.patient.rxpercent) && ...
+                handles.patient.rxpercent > 0
         
-        % Write prescription as "Dose to % of Structure"
-        data{5,2} = sprintf('%0.1f Gy to %0.1f%% of %s', ...
-            handles.patient.rxdose, handles.patient.rxpercent, ...
-            handles.patient.rxvolume);
+            % Write prescription as "Dose to % of Structure"
+            data{5,2} = sprintf('%0.1f Gy to %0.1f%% of %s', ...
+                handles.patient.rxdose, handles.patient.rxpercent, ...
+                handles.patient.rxvolume);
+            
+        % Otherwise this is a point prescription
+        else
+            % Write prescription as "Dose to Point"
+            data{5,2} = sprintf('%0.1f Gy to %s', ...
+                handles.patient.rxdose, handles.patient.rxvolume);
+        end
+    else
+        data{5,2} = '';
     end
     
     % Update number of fractions
@@ -461,6 +478,8 @@ if iscell(name) || sum(name ~= 0)
         else
             data{7,2} = 'CT';
         end
+    else
+        data{7,2} = '';
     end
     
     % Update list of structure density overrides, in prioritized order
@@ -492,16 +511,22 @@ if iscell(name) || sum(name ~= 0)
                 end
             end
         end
+    else
+        data{8,2} = '';
     end
     
     % Update plan name if present
     if isfield(handles.patient, 'plan')
         data{9,2} = handles.patient.plan;
+    else
+        data{9,2} = '';
     end
     
     % Update plan approval date if present
     if isfield(handles.patient, 'planapproval')
         data{10,2} = handles.patient.planapproval;
+    else
+        data{10,2} = '';
     end
     
     % Set patient table with updated data
@@ -526,11 +551,15 @@ if iscell(name) || sum(name ~= 0)
     % Update the machine version if present
     if isfield(handles.machine, 'version')
         data{3,2} = handles.machine.version;
+    else
+        data{3,2} = '';
     end
     
     % Update the dose model if present
     if isfield(handles.machine, 'model')
         data{4,2} = handles.machine.model;
+    else
+        data{4,2} = '';
     end
     
     % Update the institution if present
@@ -542,6 +571,8 @@ if iscell(name) || sum(name ~= 0)
         else
             data{5,2} = handles.machine.institution;
         end
+    else
+        data{5,2} = '';
     end
     
     % Update the planning strength from the report, if it exists
