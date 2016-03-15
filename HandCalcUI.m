@@ -72,14 +72,16 @@ handles.k = 1.85;
 
 %% Global variables
 % Set version_text handle
-handles.version = '1.0';
+handles.version = '1.0.0';
 
-% Declare default machine name and serial number
+% Declare default machine name
 handles.defaultmachine = 'ViewRay MRIdian';
-handles.defaultserial = '101';
 
 % Declare Co-60 half life, in days
 handles.halflife = 1925.2;
+
+% Declare average difference yellow and red thresholds, in percent
+handles.threshold = [5 10];
 
 %% Prepare path, logs
 % Determine path of current application
@@ -541,11 +543,9 @@ if iscell(name) || sum(name ~= 0)
     
     % If a serial number exists, update with that
     if isfield(handles.machine, 'serial')
-        data{2,2} = handles.machine.serial;
-        
-    % Otherwise, use the global default value
+        data{2,2} = handles.machine.serial;        
     else
-        data{2,2} = handles.defaultserial;
+        data{2,2} = '';
     end
     
     % Update the machine version if present
@@ -727,7 +727,8 @@ if iscell(name) || sum(name ~= 0)
         
         % If the equivalent square field size is not set
         if ~isfield(handles.beams{i}, 'equivsquare') || ...
-                isempty(handles.beams{i}.equivsquare)
+                isempty(handles.beams{i}.equivsquare) || ...
+                isnan(handles.beams{i}.equivsquare)
             
             % Prompt the user to enter the field size
             handles.beams{i}.equivsquare = str2double(inputdlg(sprintf(...
@@ -931,14 +932,14 @@ if iscell(name) || sum(name ~= 0)
     % Disable the difference field (to change background color)
     set(handles.difference, 'Enable', 'off');
     
-    % If the weighted difference is less than 5%
-    if abs(handles.meandiff) < 5
+    % If the weighted difference is less than the yellow threshold
+    if abs(handles.meandiff) < handles.threshold(1)
         
         % Set the background color to be green
         set(handles.difference, 'BackgroundColor', [0.8 1 0.8]);
         
-    % Otherwise, if the difference is less than 10% 
-    elseif abs(handles.meandiff) < 10
+    % Otherwise, if the difference is less than the second threshold
+    elseif abs(handles.meandiff) < handles.threshold(2)
         
         % Set the background to yellow
         set(handles.difference, 'BackgroundColor', [1 1 0.8]);
@@ -952,7 +953,8 @@ if iscell(name) || sum(name ~= 0)
     set(handles.difference, 'Enable', 'on');
     
     % Update the value with the weighted difference
-    set(handles.difference, 'String', sprintf('%0.2f%%', handles.meandiff));
+    set(handles.difference, 'String', ...
+        sprintf('%0.2f%%', handles.meandiff));
     
     % Log the result
     Event(['Weighted mean calculation difference computed as ', ...
@@ -1040,7 +1042,7 @@ if ~isempty(eventdata.NewData)
     
     % Log warning
     Event(['Patient data cannot be edited at this time. Use Browse to ', ...
-        'load a plan report'], 'WARN');
+        'load a plan report instead.'], 'WARN');
     
     % Clear temporary variable
     clear data;
@@ -1077,7 +1079,7 @@ if ~isempty(eventdata.NewData)
     
     % Log warning
     Event(['Machine data cannot be edited at this time. Use Browse to ', ...
-        'load a plan report'], 'WARN');
+        'load a plan report instead.'], 'WARN');
     
     % Clear temporary variable
     clear data;
@@ -1114,7 +1116,7 @@ if ~isempty(eventdata.NewData)
     
     % Log warning
     Event(['Calibration data cannot be edited at this time. Use Browse to ', ...
-        'load a plan report'], 'WARN');
+        'load a plan report instead.'], 'WARN');
     
     % Clear temporary variable
     clear data;
@@ -1151,7 +1153,7 @@ if ~isempty(eventdata.NewData)
     
     % Log warning
     Event(['Beam data cannot be edited at this time. Use Browse to ', ...
-        'load a plan report'], 'WARN');
+        'load a plan report instead.'], 'WARN');
     
     % Clear temporary variable
     clear data;
