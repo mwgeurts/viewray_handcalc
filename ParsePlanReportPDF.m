@@ -299,7 +299,7 @@ for i = 1:length(content{4})
         fields = textscan(tline, '%f/%f/%f %f to %f%% %f %f %f');
         
         % Store fields
-        if ~isempty(fields{4})
+        if ~isempty(fields{8})
             patient.rxdose = fields{4};
             patient.rxpercent = fields{5};
             patient.fractions = fields{6};
@@ -311,7 +311,7 @@ for i = 1:length(content{4})
         fields = textscan(tline, '%f/%f/%f %f %f %f %f');
         
         % Store fields
-        if ~isempty(fields{4})
+        if ~isempty(fields{7})
             patient.rxdose = fields{4};
             patient.fractions = fields{5};
             patient.doseperfx = fields{6};
