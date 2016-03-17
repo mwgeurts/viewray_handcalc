@@ -232,6 +232,20 @@ else
         ' the plan report contains source strength data'], 'WARN');
 end
 
+%% Load submodules
+% Add xpdf_tools submodule to search path
+addpath('./xpdf_tools');
+
+% Check if MATLAB can find XpdfText. This feature can be tested by
+% executing FieldUniformity('unitXpdfTools')
+if exist('XpdfText', 'file') ~= 2 || (~isempty(varargin) && ...
+        strcmp(varargin{1}, 'unitXpdfTools'))
+    
+    % If not, throw an error
+    Event(['The xpdf_tools submodule does not exist in the search path. ', ...
+        'Use git clone --recursive or git submodule init followed by git ', ...
+        'submodule update to fetch all submodules'], 'ERROR');
+end
 
 %% Finish up
 % Unit test flag. This will be set to 1 if the application is being run as
