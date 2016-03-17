@@ -88,7 +88,7 @@ decay = time * planning/cal * 1 / exp(-log(2)/halflife * (now() - date));
 
 % Log result
 if exist('Event', 'file') == 2
-    Event(sprintf('Beam on time decay corrected to %0.3f sec\n', decay));
+    Event(sprintf('Beam on time decay-corrected to %0.3f sec\n', decay));
 end
 
 % Clear temporary variables
