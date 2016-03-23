@@ -662,6 +662,121 @@ results{size(results,1)+1,1} = '9';
 results{size(results,1),2} = 'Plan Report Identical';
 results{size(results,1),3} = pf;
 
+%% TEST 10/11: CalculateBeamTime results, time
+%
+% DESCRIPTION: This unit test validates the different function input
+%   combinations available when executing CalculateBeamTime().
+%
+% RELEVANT REQUIREMENTS: F009, F010, F011
+%
+% INPUT DATA: A beams structure from ParsePlanReportPDF or
+%   ParsePlanReportText
+%
+% CONDITION A (+): CalculateBeamTime() will execute successfully and return
+%   a consistent answer when provided dose, depth, and field size inputs
+%
+% CONDITION B (-): CalculateBeamTime() will fail if provided too few inputs
+%
+% CONDITION C (+): CalculateBeamTime() will execute successfully and return
+%   a consistent answer when provided OAD, beam angle, calibration factor, 
+%   couch attenuation magnitude, SAD, SCD, TPR, and Scp factors
+%
+% CONDITION D (+): CalculateBeamTime() will execute successfully and return
+%   a consistent answer when provided a beams structure
+%
+% CONDITION E (+): Report the average time taken to execute the function
+%   CalculateBeamTime() for the above conditions
+
+% Start timer
+t = tic;
+
+% Execute CalculateBeamTime() in try/catch statement
+try
+    pf = pass;
+    calc1 = CalculateBeamTime('dose', 1.5, 'depth', 10, 'r', 10);
+
+% If it errors, record fail
+catch
+    pf = fail;
+end
+
+% If reference data exists
+if nargin == 3 
+    
+    % If the beam on time matches the reference
+    if ~isequal(calc1.time, reference.calc1.time)
+        pf = fail;
+    end
+else
+    reference.calc1 = calc1;
+end
+
+% Execute CalculateBeamTime() in try/catch statement (this should fail)
+try
+    CalculateBeamTime();
+    pf = fail;
+    
+% If it errors
+catch
+	% The test passed
+end
+
+% Execute CalculateBeamTime() in try/catch statement with extra inputs
+try
+    calc2 = CalculateBeamTime('dose', 1.8, 'depth', 10, 'r', [8 14], 'oad', ...
+        12, 'angle', 180, 'k', 2, 'cf', 0.75, 'sad', 100, 'scd', 90);
+
+% If it errors, record fail
+catch
+    pf = fail;
+end
+
+% If reference data exists
+if nargin == 3 
+    
+    % If the beam on time matches the reference
+    if ~isequal(calc2.time, reference.calc2.time)
+        pf = fail;
+    end
+else
+    reference.calc2 = calc2;
+end
+
+% Execute CalculateBeamTime() in try/catch statement with beam input
+try
+
+    calc3 = CalculateBeamTime('dose', 2, 'beam', struct('edepth', 20, ...
+        'equivsquare', 20, 'oad', 8, 'angle', 150, 'ssd', 100, 'depth', 15));
+
+% If it errors, record fail
+catch
+    pf = fail;
+end
+
+% If reference data exists
+if nargin == 3 
+    
+    % If the beam on time matches the reference
+    if ~isequal(calc3.time, reference.calc3.time)
+        pf = fail;
+    end
+else
+    reference.calc3 = calc3;
+end
+
+% Record completion time
+time = sprintf('%0.1f sec', toc(t)/3);
+
+% Add result
+results{size(results,1)+1,1} = '10';
+results{size(results,1),2} = 'CalculateBeamTime() computes correctly';
+results{size(results,1),3} = pf;
+
+% Add result
+results{size(results,1)+1,1} = '11';
+results{size(results,1),2} = 'CalculateBeamTime() Average Execution Time';
+results{size(results,1),3} = time;
+
 
 %% Finish up
 % Close all figures
