@@ -386,11 +386,22 @@ function browse_button_Callback(hObject, ~, handles)
 % Log event
 Event('Report browse button selected');
 
-% Request the user to select the plan report
-Event('UI window opened to select file');
-[name, path] = uigetfile({'*.pdf', 'Plan PDF Report (.pdf)'; '*.txt', ...
-    'Plan Text Report (.txt)'}, 'Select the plan report PDF or text file', ...
-    handles.path);
+% If not executing in unit test
+if handles.unitflag == 0
+    
+    % Request the user to select the plan report
+    Event('UI window opened to select file');
+    [name, path] = uigetfile({'*.pdf', 'Plan PDF Report (.pdf)'; '*.txt', ...
+        'Plan Text Report (.txt)'}, ...
+        'Select the plan report PDF or text file', handles.path);
+
+else
+    
+    % Log unit test
+    Event('Retrieving stored name and path variables', 'UNIT');
+    name = handles.unitname;
+    path = handles.unitpath;
+end
 
 % If a file was selected
 if iscell(name) || sum(name ~= 0)
@@ -427,9 +438,19 @@ if iscell(name) || sum(name ~= 0)
     % Get the number of fractions, if not provided
     if ~isfield(handles.patient, 'fractions')
         
-        % Prompt the user to enter the number of fractions
-        handles.patient.fractions = str2double(inputdlg(...
-            'Enter the number of fractions'));
+        % If not executing in unit test
+        if handles.unitflag == 0
+    
+            % Prompt the user to enter the number of fractions
+            handles.patient.fractions = str2double(inputdlg(...
+                'Enter the number of fractions'));
+        else
+            
+            % Use a default value
+            handles.patient.fractions = 1;
+            Event(sprintf('Fraction number set to %i', ...
+                handles.patient.fractions), 'UNIT');
+        end
     end
     
     %% Set patient data
@@ -691,10 +712,20 @@ if iscell(name) || sum(name ~= 0)
                 names{j} = handles.points{j}.name;
             end
             
-            % Prompt user to select a calc point
-            [calcpt, selected] = listdlg('PromptString', ...
-                'Select a point to use for calculation', 'SelectionMode', ...
-                'single', 'ListString', names, 'ListSize', [300 50]);
+            % If not executing in unit test
+            if handles.unitflag == 0
+
+                % Prompt user to select a calc point
+                [calcpt, selected] = listdlg('PromptString', ...
+                    'Select a point to use for calculation', 'SelectionMode', ...
+                    'single', 'ListString', names, 'ListSize', [300 50]);
+            else
+
+                % Use a default value
+                calcpt = 1;
+                Event(sprintf('Calculation point set to %i', calcpt), ...
+                    'UNIT');
+            end
             
             % Make sure the user selected something
             if selected == 0
@@ -709,10 +740,20 @@ if iscell(name) || sum(name ~= 0)
         % If the calc point dose is not set
         if ~isfield(handles.points{calcpt}, 'dose')
             
-            % Prompt the user to enter the total dose
-            handles.points{calcpt}.dose = str2double(inputdlg(sprintf(...
-                'Enter the total dose, from all fractions, to %s in Gy', ...
-                handles.points{calcpt}.name)));
+            % If not executing in unit test
+            if handles.unitflag == 0
+
+                % Prompt the user to enter the total dose
+                handles.points{calcpt}.dose = str2double(inputdlg(sprintf(...
+                    'Enter the total dose, from all fractions, to %s in Gy', ...
+                    handles.points{calcpt}.name)));
+            else
+
+                % Use a default value
+                handles.points{calcpt}.dose = 8;
+                Event(sprintf('Calculation point dose set to %0.1f Gy', ...
+                    handles.points{calcpt}.dose), 'UNIT');
+            end
         end
         
         % Make sure the dose entry is valid
@@ -725,11 +766,21 @@ if iscell(name) || sum(name ~= 0)
         % If the weight percentage for this beam is not set
         if ~isfield(handles.beams{i}, 'weight') || ...
                 isempty(handles.beams{i}.weight)
-            
-            % Prompt the user to enter the weight
-            handles.beams{i}.weight = str2double(inputdlg(sprintf(...
-                'Enter the weight of beam %i to %s as a percent', ...
-                i, handles.points{calcpt}.name)));
+
+            % If not executing in unit test
+            if handles.unitflag == 0
+
+                % Prompt the user to enter the weight
+                handles.beams{i}.weight = str2double(inputdlg(sprintf(...
+                    'Enter the weight of beam %i to %s as a percent', ...
+                    i, handles.points{calcpt}.name)));
+            else
+
+                % Use a default value
+                handles.beams{i}.weight = 1/6 * 100;
+                Event(sprintf('Beam %i weight set to %0.1f%%', ...
+                    i, handles.beams{i}.weight), 'UNIT');
+            end
         end
         
         % Make sure the weight entry is valid
@@ -743,11 +794,21 @@ if iscell(name) || sum(name ~= 0)
         if ~isfield(handles.beams{i}, 'equivsquare') || ...
                 isempty(handles.beams{i}.equivsquare) || ...
                 isnan(handles.beams{i}.equivsquare)
-            
-            % Prompt the user to enter the field size
-            handles.beams{i}.equivsquare = str2double(inputdlg(sprintf(...
-                'Enter the equivalent square field size of beam %i in cm', ...
-                i)));
+             
+            % If not executing in unit test
+            if handles.unitflag == 0
+
+                % Prompt the user to enter the field size
+                handles.beams{i}.equivsquare = str2double(inputdlg(sprintf(...
+                    'Enter the equivalent square field size of beam %i in cm', ...
+                    i)));
+            else
+
+                % Use a default value
+                handles.beams{i}.equivsquare = 10;
+                Event(sprintf('Beam %i weight set to %0.1f cm', ...
+                    i, handles.beams{i}.equivsquare), 'UNIT');
+            end
         end
         
         % Make sure the field size is valid
