@@ -88,13 +88,16 @@ if nargin == 0
 
     % Declare prior version directories
     varargout{3} = {
-        
+        './'
     };
 
     % Declare location of test data. Column 1 is the name of the 
     % test suite, column 2 is the absolute path to the file(s)
     varargout{4} = {
-        'STATVR'     '../test_data/statvr/ViewRayReport_STATVR1.pdf'
+        'v4.0 Text'     {'../test_data/source/SourceTracking_2016_2_24.pdf' 
+                      '../test_data/statvr/PlanOverview_STATVR3.txt'}
+        'v4.0 PDF'     {'../test_data/source/SourceTracking_2016_2_24.pdf' 
+                      '../test_data/statvr/ViewRayReport_STATVR1.pdf'}
     };
 
     % Declare name of report file (will be appended by _R201XX.md based on 
@@ -137,7 +140,7 @@ end
 %   errors are present if the required submodules do not exist and that the
 %   print report button is initially disabled.
 %
-% RELEVANT REQUIREMENTS: U001, F001
+% RELEVANT REQUIREMENTS: U001, F001, P001
 %
 % INPUT DATA: No input data required
 %
@@ -146,6 +149,8 @@ end
 %
 % CONDITION B (-): With the xpdf_tools submodule missing, opening the 
 %   application throws an error
+%
+% CONDITION C (+): Report application load time
 
 % Change to directory of version being tested
 cd(varargin{1});
@@ -183,9 +188,9 @@ data = guidata(h);
 data.unitflag = 1; 
 
 % Compute numeric version (equal to major * 10000 + minor * 100 + bug)
-c = regexp(data.version, '^([0-9]+)\.([0-9]+)\.*([0-9]*)', 'tokens');
-version = str2double(c{1}{1})*10000 + str2double(c{1}{2})*100 + ...
-    max(str2double(c{1}{3}),0);
+% c = regexp(data.version, '^([0-9]+)\.([0-9]+)\.*([0-9]*)', 'tokens');
+% version = str2double(c{1}{1})*10000 + str2double(c{1}{2})*100 + ...
+%     max(str2double(c{1}{3}),0);
 
 % Add version to results
 results{size(results,1)+1,1} = 'ID';
@@ -300,8 +305,7 @@ data = guidata(h);
 try
     
     pf = pass;
-    ParseSourceTrackingPDF('../test_data/sourcereport/', ...
-        'SourceTracking_2016_2_24.pdf');
+    data.calibration = ParseSourceTrackingPDF(varargin{2}{1});
 
 % If it errors, record fail
 catch
@@ -316,9 +320,346 @@ catch
     % If it fails, test passed
 end
     
+% Store guidata
+guidata(h, data);
+
 % Add success message
 results{size(results,1)+1,1} = '5';
 results{size(results,1),2} = 'Source Calibration Report Loads Successfully';
+results{size(results,1),3} = pf;
+
+%% TEST 6: Source Calibration Information Identical
+%
+% DESCRIPTION: This unit test verifies that the ParseSourceTrackingPDF
+% function extracts consistent information from the source PDF, including 
+% system name, serial number, and source ID, activity, and strength for 
+% each source.
+%
+% RELEVANT REQUIREMENTS: F008
+%
+% INPUT DATA: Validated source calibration report (varargin{2}{1})
+%
+% CONDITION A (+): The extracted reference data matches expected data
+%
+% CONDITION B (-): The extracted reference data is not empty
+
+% If reference data exists
+if nargin == 3
+
+    % If current value equals the reference and is not empty
+    if ~isempty(data.calibration.sourceid) && ...
+            isequal(data.calibration.sourceid, reference.calibration.sourceid) && ...
+            isequal(data.calibration.activity, reference.calibration.activity) && ...
+            isequal(data.calibration.activitydate, reference.calibration.activitydate) && ...
+            isequal(data.calibration.strength, reference.calibration.strength) && ...
+            isequal(data.calibration.strengthdate, reference.calibration.strengthdate) && ...
+            isequal(data.calibration.system, reference.calibration.system) && ...
+            isequal(data.calibration.serial, reference.calibration.serial)
+        pf = pass;
+
+    % Otherwise, it failed
+    else
+        pf = fail;
+    end
+
+% Otherwise, no reference data exists
+else
+
+    % Set current value as reference
+    reference.calibration = data.calibration;
+
+    % Assume pass
+    pf = pass;
+    
+    % Extract filename
+    [~, name, ext] = fileparts(varargin{2}{1});
+    
+    % Add source calibration report to preamble
+    preamble{length(preamble)+1} = ['| Source&nbsp;Calibration&nbsp;Report', ...
+        ' | ', name, ext, ' |'];
+end
+
+% Add result
+results{size(results,1)+1,1} = '6';
+results{size(results,1),2} = 'Source Calibration Report Identical';
+results{size(results,1),3} = pf;
+
+%% TEST 7/8: Browse Loads Report Successfully/Load Time
+%
+% DESCRIPTION: This unit test verifies a callback exists for the browse
+%   button and executes it under unit test conditions (such that a file 
+%   selection dialog box is skipped), simulating the process of a user
+%   selecting input data.  The time necessary to load the file is also
+%   checked.
+%
+% RELEVANT REQUIREMENTS: U006, F002, F003, F004, F005, P002, P003 
+%
+% INPUT DATA: Validated text and PDF plan report (varargin{2}{2})
+%
+% CONDITION A (+): The callback for the report browse button can be 
+%   executed without error when a valid filename is provided
+%
+% CONDITION B (-): The callback will throw an error if an invalid filename
+%   is provided
+%
+% CONDITION C (+): The callback will return without error when no filename
+%   is provided
+%
+% CONDITION D (+): Upon receiving a valid filename, the filename will be
+%   displayed on the user interface
+%
+% CONDITION E (+): Report the time taken to execute the browse callback and 
+%   parse the data
+
+% Retrieve guidata
+data = guidata(h);
+    
+% Retrieve callback to browse button
+callback = get(data.browse_button, 'Callback');
+
+% Set empty unit path/name
+data.unitpath = '';
+data.unitname = '';
+
+% Store guidata
+guidata(h, data);
+
+% Execute callback in try/catch statement
+try
+    pf = pass;
+    callback(data.browse_button, data);
+
+% If it errors, record fail
+catch
+    pf = fail;
+end
+
+% Set invalid unit path/name
+data.unitpath = '/';
+data.unitname = 'asd';
+
+% Store guidata
+guidata(h, data);
+
+% Execute callback in try/catch statement (this should fail)
+try
+    callback(data.browse_button, data);
+    pf = fail;
+    
+% If it errors
+catch
+	% The test passed
+end
+
+% Set unit path/name
+[path, name, ext] = fileparts(varargin{2}{2});
+data.unitpath = path;
+data.unitname = [name, ext];
+
+% Store guidata
+guidata(h, data);
+
+% Execute callback in try/catch statement
+try
+    t = tic;
+    callback(data.browse_button, data);
+
+% If it errors, record fail
+catch
+    pf = fail;
+end
+
+% Record completion time
+time = sprintf('%0.1f sec', toc(t));
+
+% Retrieve guidata
+data = guidata(h);
+
+% Verify that the file name matches the input data
+if strcmp(pf, pass) && strcmp(data.report.String, fullfile(varargin{2}{2}))
+    pf = pass;
+else
+    pf = fail;
+end
+
+% Add result
+results{size(results,1)+1,1} = '7';
+results{size(results,1),2} = 'Browse Loads Report Successfully';
+results{size(results,1),3} = pf;
+
+% Add result
+results{size(results,1)+1,1} = '8';
+results{size(results,1),2} = 'Browse Callback Load Time';
+results{size(results,1),3} = time;
+
+%% TEST 9: Parsed Report Data Identical
+%
+% DESCRIPTION: This unit test compares the parsed text and PDF report data
+% and compares it to reference data. The patient, machine, point, and beams
+% structures are compared
+%
+% RELEVANT REQUIREMENTS: F006, F007
+%
+% INPUT DATA: Validated text and PDF plan report (varargin{2}{2})
+%
+% CONDITION A (+): Extracted structures are identical
+%
+% CONDITION B (-): Extracted structures are not empty
+
+% Retrieve guidata
+data = guidata(h);
+
+% If reference data exists and this is a text file
+if nargin == 3 && ~isempty(regexpi(name, '.txt$'))
+
+    % If current value equals the reference and is not empty
+    if ~isempty(data.patient.id) && ~isempty(data.machine) && ...
+            ~isempty(data.points) && ~isempty(data.beams) && ...
+            isequal(data.patient.id, reference.patient.id) && ...
+            isequal(data.patient.name, reference.patient.name) && ...
+            isequal(data.patient.birthdate, reference.patient.birthdate) && ...
+            isequal(data.patient.diagnosis, reference.patient.diagnosis) && ...
+            isequal(data.patient.prescription, reference.patient.prescription) && ...
+            isequal(data.patient.plan, reference.patient.plan) && ...
+            isequal(data.patient.planapproval, reference.patient.planapproval) && ...
+            isequal(data.patient.planid, reference.patient.planid) && ...
+            isequal(data.patient.lastmodified, reference.patient.lastmodified) && ...
+            isequal(data.patient.rxvolume, reference.patient.rxvolume) && ...
+            isequal(data.patient.rxdose, reference.patient.rxdose) && ...
+            isequal(data.patient.rxpercent, reference.patient.rxpercent) && ...
+            isequal(data.patient.fractions, reference.patient.fractions) && ...
+            isequal(data.patient.position, reference.patient.position) && ...
+            isequal(data.patient.couch, reference.patient.couch) && ...
+            isequal(data.patient.densityct, reference.patient.densityct) && ...
+            isequal(data.patient.densityoverrides, reference.patient.densityoverrides) && ...
+            isequal(data.machine.name, reference.machine.name) && ...
+            isequal(data.machine.serial, reference.machine.serial) && ...
+            isequal(data.machine.version, reference.machine.version) && ...
+            isequal(data.machine.model, reference.machine.model) && ...
+            isequal(data.machine.institution, reference.machine.institution) && ...
+            isequal(data.machine.department, reference.machine.department) && ...
+            isequal(data.machine.timespec, reference.machine.timespec) && ...
+            isequal(data.points{1}.name, reference.points{1}.name) && ...
+            isequal(data.points{1}.coordinates, reference.points{1}.coordinates) && ...
+            isequal(data.beams{1}.angle, reference.beams{1}.angle) && ...
+            isequal(data.beams{1}.group, reference.beams{1}.group) && ...
+            isequal(data.beams{1}.iso, reference.beams{1}.iso) && ...
+            isequal(data.beams{1}.ssd, reference.beams{1}.ssd) && ...
+            isequal(data.beams{1}.depth, reference.beams{1}.depth) && ...
+            isequal(data.beams{1}.edepth, reference.beams{1}.edepth) && ...
+            isequal(data.beams{1}.oad, reference.beams{1}.oad) && ...
+            isequal(data.beams{1}.plantime, reference.beams{1}.plantime) && ...
+            isequal(data.beams{1}.type, reference.beams{1}.type) && ...
+            isequal(data.beams{1}.equivsquare, reference.beams{1}.equivsquare) && ...
+            isequal(data.beams{1}.weightpt, reference.beams{1}.weightpt) && ...
+            isequal(data.beams{1}.weight, reference.beams{1}.weight)
+        pf = pass;
+
+    % Otherwise, it failed
+    else
+        pf = fail;
+    end
+
+% If reference data exists and this is a PDF file
+elseif nargin == 3 && ~isempty(regexpi(name, '.pdf$'))
+
+    % If current value equals the reference and is not empty
+    if ~isempty(data.patient.id) && ~isempty(data.machine) && ...
+            ~isempty(data.points) && ~isempty(data.beams) && ...
+            isequal(data.patient.name, reference.patient.name) && ...
+            isequal(data.patient.plan, reference.patient.plan) && ...
+            isequal(data.patient.lastmodified, reference.patient.lastmodified) && ...
+            isequal(data.patient.id, reference.patient.id) && ...
+            isequal(data.patient.mrn, reference.patient.mrn) && ...
+            isequal(data.patient.birthdate, reference.patient.birthdate) && ...
+            isequal(data.patient.rxapproval, reference.patient.rxapproval) && ...
+            isequal(data.patient.rxapprovaldate, reference.patient.rxapprovaldate) && ...
+            isequal(data.patient.contourapproval, reference.patient.contourapproval) && ...
+            isequal(data.patient.contourapprovaldate, reference.patient.contourapprovaldate) && ...
+            isequal(data.patient.imageapproval, reference.patient.imageapproval) && ...
+            isequal(data.patient.imageapprovaldate, reference.patient.imageapprovaldate) && ...
+            isequal(data.patient.planapproval, reference.patient.planapproval) && ...
+            isequal(data.patient.planapprovaldate, reference.patient.planapprovaldate) && ...
+            isequal(data.patient.calendarapproval, reference.patient.calendarapproval) && ...
+            isequal(data.patient.calendarapprovaldate, reference.patient.calendarapprovaldate) && ...
+            isequal(data.patient.coil, reference.patient.coil) && ...
+            isequal(data.patient.autonormalize, reference.patient.autonormalize) && ...
+            isequal(data.patient.interdigitation, reference.patient.interdigitation) && ...
+            isequal(data.patient.resolution, reference.patient.resolution) && ...
+            isequal(data.patient.deform, reference.patient.deform) && ...
+            isequal(data.patient.deliverytime, reference.patient.deliverytime) && ...
+            isequal(data.patient.position, reference.patient.position) && ...
+            isequal(data.patient.diagnosis, reference.patient.diagnosis) && ...
+            isequal(data.patient.rxvolume, reference.patient.rxvolume) && ...
+            isequal(data.patient.rxdose, reference.patient.rxdose) && ...
+            isequal(data.patient.rxpercent, reference.patient.rxpercent) && ...
+            isequal(data.patient.fractions, reference.patient.fractions) && ...
+            isequal(data.patient.doseperfx, reference.patient.doseperfx) && ...
+            isequal(data.patient.prevdose, reference.patient.prevdose) && ...
+            isequal(data.patient.couch, reference.patient.couch) && ...
+            isequal(data.patient.densityct, reference.patient.densityct) && ...
+            isequal(data.patient.densityoverrides, reference.patient.densityoverrides) && ...
+            isequal(data.machine.institution, reference.machine.institution) && ...
+            isequal(data.machine.version, reference.machine.version) && ...
+            isequal(data.machine.isotope, reference.machine.isotope) && ...
+            isequal(data.machine.model, reference.machine.model) && ...
+            isequal(data.machine.calibration, reference.machine.calibration) && ...
+            isequal(data.machine.planning, reference.machine.planning) && ...
+            isequal(data.points{1}.name, reference.points{1}.name) && ...
+            isequal(data.points{1}.coordinates, reference.points{1}.coordinates) && ...
+            isequal(data.points{1}.dose, reference.points{1}.dose) && ...
+            isequal(data.points{1}.beams, reference.points{1}.beams) && ...
+            isequal(data.points{1}.couch, reference.points{1}.couch) && ...
+            isequal(data.beams{1}.angle, reference.beams{1}.angle) && ...
+            isequal(data.beams{1}.group, reference.beams{1}.group) && ...
+            isequal(data.beams{1}.iso, reference.beams{1}.iso) && ...
+            isequal(data.beams{1}.ssd, reference.beams{1}.ssd) && ...
+            isequal(data.beams{1}.depth, reference.beams{1}.depth) && ...
+            isequal(data.beams{1}.edepth, reference.beams{1}.edepth) && ...
+            isequal(data.beams{1}.oad, reference.beams{1}.oad) && ...
+            isequal(data.beams{1}.plantime, reference.beams{1}.plantime) && ...
+            isequal(data.beams{1}.type, reference.beams{1}.type) && ...
+            isequal(data.beams{1}.equivsquare, reference.beams{1}.equivsquare) && ...
+            isequal(data.beams{1}.weightpt, reference.beams{1}.weightpt) && ...
+            isequal(data.beams{1}.weight, reference.beams{1}.weight)
+        pf = pass;
+
+    % Otherwise, it failed
+    else
+        pf = fail;
+    end
+    
+% Otherwise, no reference data exists
+else
+
+    % Set current value as reference
+    reference.patient = data.patient;
+    reference.machine = data.machine;
+    reference.points = data.points;
+    reference.beams = data.beams;
+
+    % Assume pass
+    pf = pass;
+    
+    % Extract filename
+    [~, name, ext] = fileparts(varargin{2}{2});
+    
+    % Add plan report to preamble
+    preamble{length(preamble)+1} = ['| Plan&nbsp;Report', ...
+        ' | ', name, ext, ' |'];
+    
+    % Add number of beams
+    preamble{length(preamble)+1} = ['| Number&nbsp;of&nbsp;Beams', ...
+        ' | ', length(data.beams), ' |'];
+    
+    % Add beam type
+    preamble{length(preamble)+1} = ['| Beam&nbsp;Type', ...
+        ' | ', data.beams{1}.type, ' |'];
+end
+
+% Add result
+results{size(results,1)+1,1} = '9';
+results{size(results,1),2} = 'Plan Report Identical';
 results{size(results,1),3} = pf;
 
 
