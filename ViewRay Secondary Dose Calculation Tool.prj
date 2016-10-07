@@ -1,5 +1,5 @@
 <deployment-project plugin="plugin.apptool" plugin-version="1.0">
-  <configuration build-checksum="3069492894" file="/Users/mwgeurts/Documents/ViewRay/Independent Dose Calculator Project/viewray_handcalc/ViewRay Secondary Dose Calculation Tool.prj" location="/Users/mwgeurts/Documents/ViewRay/Independent Dose Calculator Project/viewray_handcalc" name="ViewRay Secondary Dose Calculation Tool" target="target.mlapps" target-name="Package App">
+  <configuration build-checksum="3244966928" file="/Users/mwgeurts/Documents/ViewRay/Independent Dose Calculator Project/viewray_handcalc/ViewRay Secondary Dose Calculation Tool.prj" location="/Users/mwgeurts/Documents/ViewRay/Independent Dose Calculator Project/viewray_handcalc" name="ViewRay Secondary Dose Calculation Tool" target="target.mlapps" target-name="Package App">
     <param.appname>ViewRay Secondary Dose Calculation Tool</param.appname>
     <param.authnamewatermark>Mark Geurts</param.authnamewatermark>
     <param.email>mark.w.geurts@gmail.com</param.email>
@@ -9,7 +9,7 @@
     <param.summary>ViewRay fixed conformal plan secondary dose calculation</param.summary>
     <param.description>The ViewRay Secondary Dose Calculation Tool loads a fixed conformal plan report from the ViewRay™ Treatment Planning System and recomputes the beam on time for each field to deliver the prescribed dose using a two-dimensional (2D) dose formalism.</param.description>
     <param.screenshot>/Users/mwgeurts/Documents/ViewRay/Independent Dose Calculator Project/Screenshot.png</param.screenshot>
-    <param.version>1.0</param.version>
+    <param.version>1.0.1</param.version>
     <param.products.name>
       <item>MATLAB</item>
       <item>Parallel Computing Toolbox</item>
@@ -29,9 +29,10 @@
     <param.output>${PROJECT_ROOT}/ViewRay Secondary Dose Calculation Tool.mlappinstall</param.output>
     <param.guid>33f3bfa8-1939-4062-b6a4-1850439543a6</param.guid>
     <unset>
+      <param.authnamewatermark />
+      <param.email />
       <param.icon />
       <param.icons />
-      <param.version />
       <param.platforms />
     </unset>
     <fileset.main>
@@ -39,6 +40,7 @@
     </fileset.main>
     <fileset.depfun>
       <file>${PROJECT_ROOT}/CalculateBeamTime.m</file>
+      <file>${PROJECT_ROOT}/CalculateDecayCorrectedTime.m</file>
       <file>${PROJECT_ROOT}/Event.m</file>
       <file>${PROJECT_ROOT}/HandCalcUI.fig</file>
       <file>${PROJECT_ROOT}/LoadVersionInfo.m</file>
@@ -48,11 +50,122 @@
       <file>${PROJECT_ROOT}/PrintReport.fig</file>
       <file>${PROJECT_ROOT}/PrintReport.m</file>
       <file>${PROJECT_ROOT}/ValidateCalcInputs.m</file>
+      <file>${PROJECT_ROOT}/calcdata/.DS_Store</file>
       <file>${PROJECT_ROOT}/calcdata/ViewRay_Scp.csv</file>
       <file>${PROJECT_ROOT}/calcdata/ViewRay_TPR.csv</file>
+      <file>${PROJECT_ROOT}/sourcereport/.DS_Store</file>
+      <file>${PROJECT_ROOT}/sourcereport/SourceTracking_2016_2_24.pdf</file>
       <file>${PROJECT_ROOT}/xpdf_tools/XpdfInfo.m</file>
       <file>${PROJECT_ROOT}/xpdf_tools/XpdfText.m</file>
       <file>${PROJECT_ROOT}/xpdf_tools/XpdfWhich.m</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-linux-3.04/ANNOUNCE</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-linux-3.04/CHANGES</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-linux-3.04/COPYING</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-linux-3.04/COPYING3</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-linux-3.04/INSTALL</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-linux-3.04/README</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-linux-3.04/bin32/pdfdetach</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-linux-3.04/bin32/pdffonts</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-linux-3.04/bin32/pdfimages</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-linux-3.04/bin32/pdfinfo</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-linux-3.04/bin32/pdftohtml</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-linux-3.04/bin32/pdftopng</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-linux-3.04/bin32/pdftoppm</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-linux-3.04/bin32/pdftops</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-linux-3.04/bin32/pdftotext</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-linux-3.04/bin64/pdfdetach</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-linux-3.04/bin64/pdffonts</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-linux-3.04/bin64/pdfimages</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-linux-3.04/bin64/pdfinfo</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-linux-3.04/bin64/pdftohtml</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-linux-3.04/bin64/pdftopng</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-linux-3.04/bin64/pdftoppm</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-linux-3.04/bin64/pdftops</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-linux-3.04/bin64/pdftotext</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-linux-3.04/doc/pdfdetach.1</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-linux-3.04/doc/pdffonts.1</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-linux-3.04/doc/pdfimages.1</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-linux-3.04/doc/pdfinfo.1</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-linux-3.04/doc/pdftohtml.1</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-linux-3.04/doc/pdftopng.1</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-linux-3.04/doc/pdftoppm.1</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-linux-3.04/doc/pdftops.1</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-linux-3.04/doc/pdftotext.1</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-linux-3.04/doc/sample-xpdfrc</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-linux-3.04/doc/xpdf.1</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-linux-3.04/doc/xpdfrc.5</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-mac-3.04/ANNOUNCE</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-mac-3.04/CHANGES</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-mac-3.04/COPYING</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-mac-3.04/COPYING3</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-mac-3.04/INSTALL</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-mac-3.04/README</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-mac-3.04/bin32/pdfdetach</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-mac-3.04/bin32/pdffonts</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-mac-3.04/bin32/pdfimages</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-mac-3.04/bin32/pdfinfo</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-mac-3.04/bin32/pdftohtml</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-mac-3.04/bin32/pdftopng</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-mac-3.04/bin32/pdftoppm</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-mac-3.04/bin32/pdftops</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-mac-3.04/bin32/pdftotext</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-mac-3.04/bin64/pdfdetach</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-mac-3.04/bin64/pdffonts</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-mac-3.04/bin64/pdfimages</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-mac-3.04/bin64/pdfinfo</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-mac-3.04/bin64/pdftohtml</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-mac-3.04/bin64/pdftopng</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-mac-3.04/bin64/pdftoppm</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-mac-3.04/bin64/pdftops</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-mac-3.04/bin64/pdftotext</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-mac-3.04/doc/pdfdetach.1</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-mac-3.04/doc/pdffonts.1</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-mac-3.04/doc/pdfimages.1</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-mac-3.04/doc/pdfinfo.1</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-mac-3.04/doc/pdftohtml.1</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-mac-3.04/doc/pdftopng.1</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-mac-3.04/doc/pdftoppm.1</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-mac-3.04/doc/pdftops.1</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-mac-3.04/doc/pdftotext.1</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-mac-3.04/doc/sample-xpdfrc</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-mac-3.04/doc/xpdf.1</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-mac-3.04/doc/xpdfrc.5</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-win-3.04/ANNOUNCE</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-win-3.04/CHANGES</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-win-3.04/COPYING</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-win-3.04/COPYING3</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-win-3.04/INSTALL</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-win-3.04/README</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-win-3.04/bin32/pdfdetach.exe</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-win-3.04/bin32/pdffonts.exe</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-win-3.04/bin32/pdfimages.exe</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-win-3.04/bin32/pdfinfo.exe</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-win-3.04/bin32/pdftohtml.exe</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-win-3.04/bin32/pdftopng.exe</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-win-3.04/bin32/pdftoppm.exe</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-win-3.04/bin32/pdftops.exe</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-win-3.04/bin32/pdftotext.exe</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-win-3.04/bin64/pdfdetach.exe</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-win-3.04/bin64/pdffonts.exe</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-win-3.04/bin64/pdfimages.exe</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-win-3.04/bin64/pdfinfo.exe</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-win-3.04/bin64/pdftohtml.exe</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-win-3.04/bin64/pdftopng.exe</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-win-3.04/bin64/pdftoppm.exe</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-win-3.04/bin64/pdftops.exe</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-win-3.04/bin64/pdftotext.exe</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-win-3.04/doc/pdfdetach.txt</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-win-3.04/doc/pdffonts.txt</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-win-3.04/doc/pdfimages.txt</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-win-3.04/doc/pdfinfo.txt</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-win-3.04/doc/pdftohtml.txt</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-win-3.04/doc/pdftopng.txt</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-win-3.04/doc/pdftoppm.txt</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-win-3.04/doc/pdftops.txt</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-win-3.04/doc/pdftotext.txt</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-win-3.04/doc/sample-xpdfrc</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-win-3.04/doc/xpdf.txt</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-win-3.04/doc/xpdfrc.txt</file>
     </fileset.depfun>
     <fileset.resources>
       <file>${PROJECT_ROOT}/README.md</file>
@@ -60,6 +173,9 @@
       <file>${PROJECT_ROOT}/calcdata</file>
       <file>${PROJECT_ROOT}/license</file>
       <file>${PROJECT_ROOT}/sourcereport</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-linux-3.04</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-mac-3.04</file>
+      <file>${PROJECT_ROOT}/xpdf_tools/xpdfbin-win-3.04</file>
     </fileset.resources>
     <fileset.package />
     <build-deliverables>
