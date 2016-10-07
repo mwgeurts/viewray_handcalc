@@ -67,21 +67,8 @@ function HandCalcUI_OpeningFcn(hObject, ~, handles, varargin)
 % Choose default command line output for HandCalcUI
 handles.output = hObject;
 
-% Declare default planning source strength, in Gy/min
-handles.k = 1.85; 
-
-%% Global variables
 % Set version_text handle
 handles.version = '1.0.1';
-
-% Declare default machine name
-handles.defaultmachine = 'ViewRay MRIdian';
-
-% Declare Co-60 half life, in days
-handles.halflife = 1925.2;
-
-% Declare average difference yellow and red thresholds, in percent
-handles.threshold = [5 10];
 
 %% Prepare path, logs
 % Determine path of current application
@@ -114,6 +101,36 @@ string = sprintf('%s\n', separator, string{:}, separator);
 
 % Log information
 Event(string, 'INIT');
+
+%% Load Configuration File
+% Open file handle to config.txt file
+fid = fopen('config.txt', 'r');
+
+% Verify that file handle is valid
+if fid < 3
+    
+    % If not, throw an error
+    Event(['The config.txt file could not be opened. Verify that this ', ...
+        'file exists in the working directory. See documentation for ', ...
+        'more information.'], 'ERROR');
+end
+
+% Scan config file contents
+c = textscan(fid, '%s', 'Delimiter', '=');
+
+% Close file handle
+fclose(fid);
+
+% Loop through textscan array, separating key/value pairs into array
+for i = 1:2:length(c{1})
+    handles.config.(strtrim(c{1}{i})) = strtrim(c{1}{i+1});
+end
+
+% Clear temporary variables
+clear c i fid;
+
+% Log completion
+Event('Loaded config.txt parameters');
 
 %% Initialize UI
 % Set version_text UI text
@@ -185,11 +202,8 @@ set(handles.beam_table, 'Data', horzcat(handles.beam_rows, ...
     cell(length(handles.beam_rows), 1)));
 
 %% Load calibration report
-% Define source report directory
-handles.sourcefolder = './sourcereport/';
-
 % Retrieve folder contents of source report directory
-report = dir(['./', handles.sourcefolder,'*.pdf']);
+report = dir(['./', handles.config.SOURCE_REPORT_DIR,'*.pdf']);
 
 % If too many files were found, pick first one
 if length(report) > 1
@@ -202,7 +216,8 @@ end
 if ~isempty(report)
     
     % Load calibration data
-    handles.calibration = ParseSourceTrackingPDF(handles.sourcefolder, ...
+    handles.calibration = ...
+        ParseSourceTrackingPDF(handles.config.SOURCE_REPORT_DIR, ...
         report.name);
     
     % Update calibration table
@@ -228,7 +243,8 @@ if ~isempty(report)
 % Otherwise no calibration data was found
 else
     Event(['No source calibration reports were found in ', ...
-        handles.sourcefolder, '. Decay correction will be disabled unless', ...
+        handles.config.SOURCE_REPORT_DIR, ...
+        '. Decay correction will be disabled unless', ...
         ' the plan report contains source strength data'], 'WARN');
 end
 
@@ -574,7 +590,7 @@ if iscell(name) || sum(name ~= 0)
     data = get(handles.machine_table, 'Data');
     
     % Update machine name with the global default value
-    data{1,2} = handles.defaultmachine;
+    data{1,2} = handles.config.DEFAULT_MACHINE;
     
     % If a serial number exists, update with that
     if isfield(handles.machine, 'serial')
@@ -618,7 +634,8 @@ if iscell(name) || sum(name ~= 0)
     
     % Otherwise, use the global default value
     else
-        data{6,2} = sprintf('%0.2f Gy/min', handles.k);
+        data{6,2} = sprintf('%0.2f Gy/min', ...
+            str2double(handles.config.SOURCE_STRENGTH));
     end
     
     % Set the machine table with the updated cells
@@ -957,8 +974,10 @@ if iscell(name) || sum(name ~= 0)
                 % Calculate and correct the calculated time for decay
                 beams{19,1+i} = sprintf('%0.2f sec', ...
                     CalculateDecayCorrectedTime('time', ...
-                    handles.calcs{i}.time, 'planning', handles.k, 'cal', ...
-                    s, 'halflife', handles.halflife, 'date', d));
+                    handles.calcs{i}.time, 'planning', ...
+                    str2double(handles.config.SOURCE_STRENGTH), 'cal', ...
+                    s, 'halflife', str2double(handles.config.HALF_LIFE), ...
+                    'date', d));
             else
                 beams{19,1+i} = '';
             end
@@ -1009,13 +1028,13 @@ if iscell(name) || sum(name ~= 0)
     set(handles.difference, 'Enable', 'off');
     
     % If the weighted difference is less than the yellow threshold
-    if abs(handles.meandiff) < handles.threshold(1)
+    if abs(handles.meandiff) < handles.config.THRESHOLD_LOWER
         
         % Set the background color to be green
         set(handles.difference, 'BackgroundColor', [0.8 1 0.8]);
         
     % Otherwise, if the difference is less than the second threshold
-    elseif abs(handles.meandiff) < handles.threshold(2)
+    elseif abs(handles.meandiff) < handles.config.THRESHOLD_UPPER
         
         % Set the background to yellow
         set(handles.difference, 'BackgroundColor', [1 1 0.8]);

@@ -1,0 +1,6 @@
+SOURCE_STRENGTH	    =   1.85
+DEFAULT_MACHINE     =   ViewRay MRIdian
+HALF_LIFE           =	1925.2
+THRESHOLD_LOWER     =   5
+THRESHOLD_UPPER     =   10
+SOURCE_REPORT_DIR   =	./sourcereport/
