@@ -72,7 +72,7 @@ handles.k = 1.85;
 
 %% Global variables
 % Set version_text handle
-handles.version = '1.0.0';
+handles.version = '1.0.1';
 
 % Declare default machine name
 handles.defaultmachine = 'ViewRay MRIdian';
