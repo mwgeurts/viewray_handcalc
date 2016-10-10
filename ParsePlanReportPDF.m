@@ -426,8 +426,8 @@ for i = 10:length(content)
             % Store beam angles
             if length(tline) > 20 && strcmp(tline(1:20), ...
                     'Planning Beam Number')
-                fields = textscan(tline(21:end), ...
-                    '%f (%f°) %f (%f°) %f (%f°)');
+                fields = textscan(regexprep(tline(21:end),'[^\.0-9()]',''), ...
+                    '%f(%f)%f(%f)%f(%f)');
                 beams{idx+1}.angle = fields{2};
                 beams{idx+2}.angle = fields{4};
                 beams{idx+3}.angle = fields{6};
