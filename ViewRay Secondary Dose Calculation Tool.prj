@@ -1,5 +1,5 @@
 <deployment-project plugin="plugin.apptool" plugin-version="1.0">
-  <configuration build-checksum="1336462980" file="/Users/mwgeurts/Documents/ViewRay/Independent Dose Calculator Project/viewray_handcalc/ViewRay Secondary Dose Calculation Tool.prj" location="/Users/mwgeurts/Documents/ViewRay/Independent Dose Calculator Project/viewray_handcalc" name="ViewRay Secondary Dose Calculation Tool" target="target.mlapps" target-name="Package App">
+  <configuration build-checksum="1829232493" file="/Users/mwgeurts/Documents/ViewRay/Independent Dose Calculator Project/viewray_handcalc/ViewRay Secondary Dose Calculation Tool.prj" location="/Users/mwgeurts/Documents/ViewRay/Independent Dose Calculator Project/viewray_handcalc" name="ViewRay Secondary Dose Calculation Tool" target="target.mlapps" target-name="Package App">
     <param.appname>ViewRay Secondary Dose Calculation Tool</param.appname>
     <param.authnamewatermark>Mark Geurts</param.authnamewatermark>
     <param.email>mark.w.geurts@gmail.com</param.email>
