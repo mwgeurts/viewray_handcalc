@@ -394,9 +394,14 @@ for i = 1:length(content{9})
         % If match was found
         if ~isempty(tokens)
             idx = str2double(tokens{1}{4});
-            patient.densityoverrides{idx}.name = strtrim(tokens{1}{1});
-            patient.densityoverrides{idx}.template = strtrim(tokens{1}{2});
-            patient.densityoverrides{idx}.density = str2double(tokens{1}{3});
+            if idx > 0
+                patient.densityoverrides{idx}.name = ...
+                    strtrim(tokens{1}{1});
+                patient.densityoverrides{idx}.template = ...
+                    strtrim(tokens{1}{2});
+                patient.densityoverrides{idx}.density = ...
+                    str2double(tokens{1}{3});
+            end
         end
     end
 end
